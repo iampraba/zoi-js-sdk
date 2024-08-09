@@ -1,6 +1,5 @@
-const DBStore = require('./db_store').DBStore;
-
-const Constants = require('../../../utils/util/constants').Constants;
+import {DBStore} from "./db_store.js";
+import {Constants} from "../../../utils/util/constants.js";
 
 class DBBuilder {
     _userName = Constants.MYSQL_USER_NAME;
@@ -68,7 +67,7 @@ class DBBuilder {
     }
 }
 
-module.exports = {
-    MasterModel: DBBuilder,
-    DBBuilder: DBBuilder
+export {
+    DBBuilder as MasterModel,
+    DBBuilder as  DBBuilder
 }

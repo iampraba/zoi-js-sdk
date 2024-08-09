@@ -1,43 +1,28 @@
-const UserSignature = require("./user_signature").UserSignature;
+import {SDKException} from "./exception/sdk_exception.js";
+import {Constants} from "../utils/util/constants.js";
+import {Environment} from "../core/com/zoho/officeintegrator/dc/environment.js";
+import {TokenStore} from "../models/authenticator/store/token_store.js";
+import {RequestProxy} from "./request_proxy.js";
+import {Token} from "../models/authenticator/token.js";
+import {Initializer} from "./initializer.js";
+import {Utility} from "../utils/util/utility.js";
+import {SDKConfigBuilder} from "./sdk_config_builder.js";
+import {FileStore} from "../models/authenticator/store/file_store.js";
+import * as path from "path";
+import {SDKConfig} from "./sdk_config.js";
+import {Logger, Levels} from "./logger/logger.js";
+import url from "url";
+import {LogBuilder} from "./logger/log_builder.js";
+import { OAuth2 } from "../models/authenticator/oauth2.js"; // No I18N
+const __dirname = url.fileURLToPath(new URL(".",import.meta.url));
 
-const Constants = require('../utils/util/constants').Constants;
-
-const Utility = require("../utils/util/utility").Utility;
-
-const SDKException = require('../routes/exception/sdk_exception').SDKException;
-
-const Token = require("../models/authenticator/token").Token;
-
-const TokenStore = require("../models/authenticator/store/token_store").TokenStore;
-
-const SDKConfig = require('./sdk_config').SDKConfig;
-
-const Environment = require("../routes/dc/environment").Environment;
-
-const Initializer = require('./initializer').Initializer;
-
-const fs = require("fs");
-
-const path = require("path");
-
-const { Logger, Levels } = require("./logger/logger");
-
-const LogBuilder = require("./logger/log_builder").LogBuilder;
-
-const SDKConfigBuilder = require("../routes/sdk_config_builder").SDKConfigBuilder;
-
-const FileStore = require("../models/authenticator/store/file_store").FileStore;
-
-const RequestProxy = require('./request_proxy').RequestProxy;
 
 class InitializeBuilder {
     _environment;
 
     _store;
 
-    _user;
-
-    _token;
+    _tokens;
 
     _requestProxy;
 
@@ -56,11 +41,9 @@ class InitializeBuilder {
             this.errorMessage = (await this.initializer != null) ? Constants.SWITCH_USER_ERROR : Constants.INITIALIZATION_ERROR;
 
             if (this.initializer != null) {
-                this._user = await this.initializer.getUser();
-
                 this._environment = await this.initializer.getEnvironment();
 
-                this._token = await this.initializer.getToken();
+                this._tokens = await this.initializer.getTokens();
 
                 this._sdkConfig = await this.initializer.getSDKConfig();
             }
@@ -68,28 +51,39 @@ class InitializeBuilder {
         })();
     }
 
-    initialize() {
-        Utility.assertNotNull(this._user, this.errorMessage, Constants.USER_SIGNATURE_ERROR_MESSAGE);
-
+    async initialize() {
         Utility.assertNotNull(this._environment, this.errorMessage, Constants.ENVIRONMENT_ERROR_MESSAGE);
 
-        Utility.assertNotNull(this._token, this.errorMessage, Constants.TOKEN_ERROR_MESSAGE);
+        Utility.assertNotNull(this._tokens, this.errorMessage, Constants.TOKEN_ERROR_MESSAGE);
 
         if(this._store == null) {
-            this._store = new FileStore(path.join(__dirname, "../../../../", Constants.TOKEN_FILE));
+            let is_create = false;
+            for(let tokenInstance of this._tokens) {
+                if (tokenInstance instanceof OAuth2) {
+                    is_create = true;
+                    break;
+                }
+            }
+            if(is_create) {
+                this._store = new FileStore(path.join(__dirname, "../../../../", Constants.TOKEN_FILE));
+            }
         }
 
         if(this._sdkConfig == null) {
             this._sdkConfig = new SDKConfigBuilder().build();
         }
-        
-        Initializer.initialize(this._user, this._environment, this._token, this._store, this._sdkConfig, this._logger, this._requestProxy);
+
+        if(this._logger == null) {
+            this._logger = new LogBuilder().level(Levels.OFF).filePath(null).build();
+        }
+
+        await Initializer.initialize(this._environment, this._tokens, this._store, this._sdkConfig, this._logger, this._requestProxy).catch(err => { throw err; });
     }
 
-    switchUser() {
+    async switchUser() {
         Utility.assertNotNull(Initializer.getInitializer(), Constants.SDK_UNINITIALIZATION_ERROR, Constants.SDK_UNINITIALIZATION_MESSAGE);
 
-        Initializer.switchUser(this._user, this._environment, this._token, this._sdkConfig, this._requestProxy);
+        await Initializer.switchUser(this._environment, this._tokens, this._sdkConfig, this._requestProxy);
     }
 
     logger(logger) {
@@ -108,20 +102,23 @@ class InitializeBuilder {
         return this;
     }
 
-    token(token) {
-        Utility.assertNotNull(token, this.errorMessage, Constants.TOKEN_ERROR_MESSAGE);
+    tokens(tokens) {
+        Utility.assertNotNull(tokens, this.errorMessage, Constants.TOKEN_ERROR_MESSAGE);
 
-        if (!(token instanceof Token)) {
-            let error = {};
+        tokens.forEach(token=>
+        {
+            if (!(token instanceof Token)) {
+                let error = {};
 
-            error[Constants.ERROR_HASH_FIELD] = Constants.TOKEN;
+                error[Constants.ERROR_HASH_FIELD] = Constants.TOKEN;
 
-            error[Constants.ERROR_HASH_EXPECTED_TYPE] = Token.name;
+                error[Constants.ERROR_HASH_EXPECTED_TYPE] = Token.name;
 
-            throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.INITIALIZATION_EXCEPTION, error);
-        }
+                throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.INITIALIZATION_EXCEPTION, error);
+            }
+        });
 
-        this._token = token;
+        this._tokens = tokens;
 
         return this;
     }
@@ -158,31 +155,13 @@ class InitializeBuilder {
         return this;
     }
 
-    user(user) {
-        Utility.assertNotNull(user, this.errorMessage, Constants.USER_SIGNATURE_ERROR_MESSAGE);
-
-        if (!(user instanceof UserSignature)) {
-            let error = {};
-
-            error[Constants.ERROR_HASH_FIELD] = Constants.USER;
-
-            error[Constants.ERROR_HASH_EXPECTED_TYPE] = UserSignature.name;
-
-            throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.INITIALIZATION_EXCEPTION, error);
-        }
-
-        this._user = user;
-
-        return this;
-    }
-
     store(store) {
-       if (store != null && !(store instanceof TokenStore)) {
+        if (store != null && !(store instanceof TokenStore)) {
             let error = {};
 
             error[Constants.ERROR_HASH_FIELD] = Constants.STORE;
 
-            error[Constants.ERROR_HASH_EXPECTED_TYPE] = Store.name;
+            error[Constants.ERROR_HASH_EXPECTED_TYPE] = TokenStore.name;
 
             throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.INITIALIZATION_EXCEPTION, error);
         }
@@ -211,7 +190,7 @@ class InitializeBuilder {
     }
 }
 
-module.exports = {
-    MasterModel: InitializeBuilder,
-    InitializeBuilder: InitializeBuilder
+export {
+    InitializeBuilder as MasterModel,
+    InitializeBuilder as InitializeBuilder
 }

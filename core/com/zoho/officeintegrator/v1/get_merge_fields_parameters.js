@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class GetMergeFieldsParameters{
 
@@ -83,8 +83,9 @@ class GetMergeFieldsParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : GetMergeFieldsParameters,
-	GetMergeFieldsParameters : GetMergeFieldsParameters
+export {
+	GetMergeFieldsParameters as MasterModel,
+	GetMergeFieldsParameters as GetMergeFieldsParameters
 }

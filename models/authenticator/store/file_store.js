@@ -1,9 +1,10 @@
-const fs = require('fs');
-const TokenStore = require('./token_store').TokenStore;
-const Constants = require('../../../utils/util/constants').Constants;
-const SDKException = require('../../../routes/exception/sdk_exception').SDKException;
-const OAuthToken = require("../oauth_token").OAuthToken;
-const OAuthBuilder = require("../oauth_builder").OAuthBuilder;
+import * as fs from "fs";
+import { TokenStore } from './token_store.js';
+import { Constants } from '../../../utils/util/constants.js';
+import {SDKException} from "../../../routes/exception/sdk_exception.js";
+import {OAuth2} from "../oauth2.js";
+import {UserSignature} from "../../../routes/user_signature.js";
+
 
 /**
  * This class stores the user token details to the file.
@@ -17,163 +18,160 @@ class FileStore extends TokenStore {
      */
     constructor(filePath) {
         super();
-
         this.filePath = filePath;
-
-        this.headers = [Constants.ID, Constants.USER_MAIL, Constants.CLIENT_ID, Constants.CLIENT_SECRET, Constants.REFRESH_TOKEN, Constants.ACCESS_TOKEN, Constants.GRANT_TOKEN, Constants.EXPIRY_TIME, Constants.REDIRECT_URL];
-
+        this.headers = [Constants.ID, Constants.USER_NAME, Constants.CLIENT_ID, Constants.CLIENT_SECRET, Constants.REFRESH_TOKEN, Constants.ACCESS_TOKEN, Constants.GRANT_TOKEN, Constants.EXPIRY_TIME, Constants.REDIRECT_URL];
         if (!fs.existsSync(this.filePath) || (fs.existsSync(this.filePath) && fs.readFileSync(this.filePath, 'utf-8') === "")) {
             fs.writeFileSync(filePath, this.headers.join(), 'utf-8');
         }
     }
 
-    getToken(user, token) {
+    async findToken(token) {
+        if (!(token instanceof OAuth2)) {
+            return token;
+        }
         try {
             var csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
-
-            if (token instanceof OAuthToken) {
-
-                for (var i = 0; i < csvReader.length; i++) {
-                    var allContents = csvReader[i];
-
-                    var nextRecord = allContents.split(",");
-
-                    if (this.checkTokenExists(user.getEmail(), token, nextRecord)) {
-                        let grantToken = (nextRecord[6] != null && nextRecord[6].length > 0) ? nextRecord[6] : null;
-
-						let redirectURL = (nextRecord[8] != null && nextRecord[8].length > 0)? nextRecord[8] : null;
-
-                        token.setId(nextRecord[0]);
-
-                        token.setUserMail(nextRecord[1]);
-
-                        token.setClientId(nextRecord[2]);
-						
-						token.setClientSecret(nextRecord[3]);
-
-                        token.setRefreshToken(nextRecord[4]);
-
-                        token.setAccessToken(nextRecord[5]);
-
-                        token.setGrantToken(grantToken);
-
-                        token.setExpiresIn(nextRecord[7]);
-
-                        token.setRedirectURL(redirectURL);
-
-                        return token;
+            if (token instanceof OAuth2) {
+                let oauthToken = token;
+                let isRowPresent = false;
+                for (let index = 1; index < csvReader.length; index++) {
+                    let allcontents = csvReader[index];
+                    let nextRecord = allcontents.split(",");
+                    if (nextRecord.length > 1) {
+                        isRowPresent = await this.checkCondition(oauthToken, nextRecord);
+                        if (isRowPresent) {
+                            await this.setMergeData(oauthToken, nextRecord);
+                            return oauthToken;
+                        }
                     }
+                }
+                if (!isRowPresent) {
+                    return null;
                 }
             }
         }
         catch (error) {
             throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_FILE_ERROR, null, error);
         }
-
         return null;
     }
 
-    async saveToken(user, token) {
-        try {
-            if (token instanceof OAuthToken) {
-
-                token.setUserMail(user.getEmail());
-
-                await this.deleteToken(token);
-
-                var data = [];
-
-                data[0] = token.getId();
-
-                data[1] = user.getEmail();
-
-                data[2] = token.getClientId();
-
-                data[3] = token.getClientSecret();
-
-                data[4] = token.getRefreshToken();
-
-                data[5] = token.getAccessToken();
-
-                data[6] = token.getGrantToken();
-
-                data[7] = token.getExpiresIn();
-
-                data[8] = token.getRedirectURL();
-
-                fs.appendFileSync(this.filePath, "\n" + data.join());
-            }
+    async saveToken(token) {
+        if (!(token instanceof OAuth2)) {
+            return token;
         }
-        catch (e) {
-            throw new SDKException(Constants.TOKEN_STORE, Constants.SAVE_TOKEN_FILE_ERROR, null, e);
-        }
-    }
-
-    deleteToken(token) {
         try {
-            var array = "";
+            let oauthToken = token;
+            var csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
+            let isRowPresent = false;
+            for (var index = 1; index < csvReader.length; index++) {
+                var allcontents = csvReader[index];
+                let nextRecord = allcontents.split(",");
+                if (nextRecord.length > 1) {
+                    if (oauthToken.getId() != null) {
+                        let id = await this.getData(nextRecord[0]);
+                        if (id != null && oauthToken.getId() != null && id == oauthToken.getId()) {
+                            isRowPresent = true;
+                        }
+                    }
+                    else {
+                        isRowPresent = await this.checkCondition(oauthToken, nextRecord);
+                    }
+                    if (isRowPresent) {
+                        await this.setMergeData(oauthToken, nextRecord)
 
-            array = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
+                        csvReader.splice(index, 1, (await this.setToken(oauthToken)).join(","));
 
-            let deleted = false;
-
-            if (token instanceof OAuthToken) {
-
-                for (var i = 0; i < array.length; i++) {
-                    var nextRecord = array[i].toString().split(",");
-
-                    if (this.checkTokenExists(token.getUserMail(), token, nextRecord)) {
-                        array.splice(i, 1);
-
-                        deleted = true;
-
-                        break;// Stop searching after we found the email
+                        break;
                     }
                 }
-
-                // Rewrite the file if we deleted the user account details.
-                if (deleted) {
-                    fs.writeFileSync(this.filePath, array.join("\n"), 'utf8');
+                else {
+                    csvReader.slice(index, csvReader.length + 1);
                 }
             }
+            if (!isRowPresent) {
+                if (oauthToken.getId() != null || oauthToken.getUserSignature() != null) {
+                    if (oauthToken.getRefreshToken() == null && oauthToken.getGrantToken() == null && oauthToken.getAccessToken() == null) {
+                        throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_FILE_ERROR1);
+                    }
+                }
+                if (oauthToken.getId() == null) {
+                    let newID = await this.generateID(csvReader);
+
+                    oauthToken.setId(newID);
+                }
+                // csvReader.push("\n");
+
+                csvReader.push((await this.setToken(oauthToken)).join(","))
+
+                fs.writeFileSync(this.filePath, csvReader.join("\n"));
+            }
+            if (isRowPresent) {
+                fs.writeFileSync(this.filePath, csvReader.join("\n"));
+            }
         }
-        catch (e) {
-            throw new SDKException(Constants.TOKEN_STORE, Constants.DELETE_TOKEN_FILE_ERROR, null, e);
+        catch (err) {
+            if (err instanceof SDKException) {
+                throw err;
+            }
+            else {
+                throw new SDKException(Constants.TOKEN_STORE, Constants.SAVE_TOKEN_FILE_ERROR, null, err);
+            }
+        }
+        finally {
         }
     }
 
-    getTokens() {
-        try {
-            var tokens = [];
 
+    async deleteToken(id) {
+        try {
             var csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
 
+            let isRowPresent = false;
+
+            for (let index = 1; index < csvReader.length; index++) {
+                let allcontents = csvReader[index];
+
+                let nextRecord = allcontents.split(",");
+
+                if (nextRecord.length > 1) {
+                    let recordId = await this.getData(nextRecord[0]);
+
+                    if (recordId == id) {
+                        isRowPresent = true;
+                        csvReader.splice(index, 1)
+                    }
+                }
+            }
+            if (isRowPresent) {
+                fs.writeFileSync(this.filePath, csvReader.join("\n"));
+            }
+            else {
+                throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_BY_ID_FILE_ERROR);
+            }
+        }
+        catch (err) {
+            if (err instanceof SDKException) {
+                throw err;
+            }
+            else {
+                throw new SDKException(Constants.TOKEN_STORE, Constants.DELETE_TOKEN_FILE_ERROR, err);
+            }
+        }
+    }
+
+    async getTokens() {
+        let _this = this;
+        try {
+            var tokens = [];
+            var csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
             for (var i = 1; i < csvReader.length; i++) {
                 let allContents = csvReader[i];
-
                 let nextRecord = allContents.split(",");
-
-                let grantToken = (nextRecord[6] != null && nextRecord[6].length > 0) ? nextRecord[6] : null;
-
-                let token = new OAuthBuilder().clientId(nextRecord[2]).clientSecret(nextRecord[3]).refreshToken(nextRecord[4]).build();
-
-                token.setId(nextRecord[0]);
-
-                if (grantToken != null) {
-                    token.setGrantToken(grantToken);
-                }
-
-                token.setUserMail(nextRecord[1]);
-
-                token.setAccessToken(nextRecord[5]);
-
-                token.setExpiresIn(nextRecord[7]);
-
-                token.setRedirectURL(nextRecord[8]);
-
-                tokens.push(token);
+                let oauthToken = Reflect.construct(OAuth2, []);
+                await _this.setMergeData(oauthToken, nextRecord)
+                tokens.push(oauthToken);
             }
-
             return tokens;
         }
         catch (error) {
@@ -191,84 +189,146 @@ class FileStore extends TokenStore {
         }
     }
 
-    checkTokenExists(email, token, row) {
-        if (email == null) {
-            throw new SDKException(Constants.USER_MAIL_NULL_ERROR, Constants.USER_MAIL_NULL_ERROR_MESSAGE);
+    async findTokenById(id) {
+        try {
+            let csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
+            let oauthToken = Reflect.construct(OAuth2, []);
+            let isRowPresent = false;
+            for (let index = 1; index < csvReader.length; index++) {
+                let nextRecord = csvReader[index].split(",");
+                if (nextRecord[0] == id) {
+                    isRowPresent = true;
+                    await this.setMergeData(oauthToken, nextRecord);
+                    return oauthToken;
+                }
+            }
+            if (!isRowPresent) {
+                throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_BY_ID_FILE_ERROR);
+            }
         }
-
-        var clientId = token.getClientId();
-
-        var grantToken = token.getGrantToken();
-
-        var refreshToken = token.getRefreshToken();
-
-        var tokenCheck = grantToken != null ? grantToken === row[6] : refreshToken === row[4];
-
-        if (row[1] === email && row[2] === clientId && tokenCheck) {
-            return true;
+        catch (err) {
+            if (err instanceof SDKException) {
+                throw err;
+            }
+            else {
+                throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_BY_ID_FILE_ERROR, err);
+            }
         }
-
-        return false;
     }
 
-    getTokenById(id, token) {
-        try {
-            var csvReader = fs.readFileSync(this.filePath, 'utf-8').toString().split("\n");
+    async checkCondition(oauthToken, nextRecord) {
+        let isRowPresent = false;
+        if (oauthToken.getUserSignature() != null) {
+            let name = oauthToken.getUserSignature().getName();
+            let userName = await this.getData(nextRecord[1]);
+            if (name != null && name.length > 0 && userName != null && userName.length > 0 && name == userName) {
+                isRowPresent = true;
+            }
+        }
+        else if (oauthToken.getAccessToken() != null && oauthToken.getClientId() == null && oauthToken.getClientSecret() == null) {
+            let accessToken = await this.getData(nextRecord[5]);
+            if (accessToken != null && accessToken.length > 0 && oauthToken.getAccessToken().length > 0 && oauthToken.getAccessToken() == accessToken) {
+                isRowPresent = true;
+            }
+        }
+        else if (oauthToken.getRefreshToken() != null || oauthToken.getGrantToken() != null && oauthToken.getClientId() != null && oauthToken.getClientSecret() != null) {
+            let grantToken = await this.getData(nextRecord[6]);
+            let refreshToken = await this.getData(nextRecord[4]);
+            if (grantToken != null && grantToken.length > 0 && oauthToken.getGrantToken() != null && oauthToken.getGrantToken() == grantToken) {
+                isRowPresent = true;
+            }
+            else if (refreshToken != null && refreshToken.length > 0 && oauthToken.getRefreshToken() != null && oauthToken.getRefreshToken() == refreshToken) {
+                isRowPresent = true;
+            }
+        }
+        return isRowPresent;
+    }
 
-            if (token instanceof OAuthToken) {
+    async getData(value) {
+        return (value != null && value.length > 0 && !(value.length == 0)) ? value : null;
+    }
 
-                let isRowPresent = false;
+    async setMergeData(oauthToken, nextRecord) {
+        if (oauthToken.getId() == null) {
+            oauthToken.setId(await this.getData(nextRecord[0]));
+        }
+        if (oauthToken.getUserSignature() == null) {
+            let name = await this.getData(nextRecord[1]);
+            if (name != null) {
+                oauthToken.setUserSignature(new UserSignature(name));
+            }
+            else if (name == null) {
+                oauthToken.setUserSignature(null);
+            }
+        }
+        if (oauthToken.getClientId() == null) {
+            oauthToken.setClientId(await this.getData(nextRecord[2]));
+        }
+        if (oauthToken.getClientSecret() == null) {
+            oauthToken.setClientSecret(await this.getData(nextRecord[3]));
+        }
+        if (oauthToken.getRefreshToken() == null) {
+            oauthToken.setRefreshToken(await this.getData(nextRecord[4]));
+        }
+        if (oauthToken.getAccessToken() == null) {
+            oauthToken.setAccessToken(await this.getData(nextRecord[5]));
+        }
+        if (oauthToken.getGrantToken() == null) {
+            oauthToken.setGrantToken(await this.getData(nextRecord[6]));
+        }
+        if (oauthToken.getExpiresIn() == null) {
+            let expiresIn = await this.getData(nextRecord[7]);
+            if (expiresIn != null) {
+                oauthToken.setExpiresIn(expiresIn.toString());
+            }
+        }
+        if (oauthToken.getRedirectURL() == null) {
+            oauthToken.setRedirectURL(await this.getData(nextRecord[8]));
+        }
+    }
 
-                for (var i = 0; i < csvReader.length; i++) {
-                    var allContents = csvReader[i];
+    async setToken(oauthToken) {
+        let data = [];
 
-                    var nextRecord = allContents.split(",");
+        data[0] = oauthToken.getId();
 
-                    if (nextRecord[0] == id) {
-                        isRowPresent = true;
+        data[1] = oauthToken.getUserSignature() != null ? oauthToken.getUserSignature().getName() : null;
 
-                        let grantToken = (nextRecord[6] != null && nextRecord[6].length > 0) ? nextRecord[6] : null;
+        data[2] = oauthToken.getClientId();
 
-                        let redirectURL = (nextRecord[8] != null && nextRecord[8].length > 0) ? nextRecord[8] : null;
+        data[3] = oauthToken.getClientSecret();
 
-                        token.setClientId(nextRecord[2]);
+        data[4] = oauthToken.getRefreshToken();
 
-                        token.setClientSecret(nextRecord[3]);
+        data[5] = oauthToken.getAccessToken();
 
-                        token.setRefreshToken(nextRecord[4]);
+        data[6] = oauthToken.getGrantToken();
 
-                        token.setId(id);
+        data[7] = oauthToken.getExpiresIn();
 
-                        if (grantToken != null) {
-                            token.setGrantToken(grantToken);
-                        }
+        data[8] = oauthToken.getRedirectURL();
 
-                        token.setUserMail(nextRecord[1]);
+        return data;
+    }
+    async generateID(allcontents) {
+        let maxValue = 0;
 
-                        token.setAccessToken(nextRecord[5]);
+        if (allcontents.length > 1) {
+            for (var i = 1; i < allcontents.length; i++) {
+                let nextRecord = allcontents[i];
 
-                        token.setExpiresIn(nextRecord[7]);
-
-                        token.setRedirectURL(redirectURL);
-
-                        return token;
+                if (nextRecord.length > 1 && nextRecord[0] != null && nextRecord[0]) {
+                    if (maxValue < parseInt(nextRecord[0])) {
+                        maxValue = parseInt(nextRecord[0]);
                     }
-                }
-
-                if (!isRowPresent) {
-                    throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_BY_ID_FILE_ERROR);
                 }
             }
         }
-        catch (error) {
-            throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_FILE_ERROR, null, error);
-        }
-
-        return null;
+        return (maxValue + 1).toString();
     }
 }
 
-module.exports = {
-    MasterModel: FileStore,
-    FileStore: FileStore
+export {
+    FileStore as MasterModel,
+    FileStore as FileStore
 }

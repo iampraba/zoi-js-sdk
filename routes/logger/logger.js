@@ -46,9 +46,10 @@ class Levels {
     static VERBOSE = 'verbose';
     static ERROR = 'error';
     static SILLY = 'silly';
+    static OFF = 'off';  // No I18N
 }
 
-module.exports = {
-    Logger: Logger,
-    Levels: Levels
-};
+export {
+    Logger as Logger,
+    Levels as Levels
+}

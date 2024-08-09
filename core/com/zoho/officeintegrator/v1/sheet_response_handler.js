@@ -1,7 +1,7 @@
 class SheetResponseHandler{
 
 }
-module.exports = {
-	MasterModel : SheetResponseHandler,
-	SheetResponseHandler : SheetResponseHandler
+export {
+	SheetResponseHandler as MasterModel,
+	SheetResponseHandler as SheetResponseHandler
 }

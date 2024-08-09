@@ -34,7 +34,7 @@ class Param {
 	}
 }
 
-module.exports = {
-	MasterModel: Param,
-	Param: Param
+export {
+	Param as MasterModel,
+	Param as Param
 }

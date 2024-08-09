@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class PreviewParameters{
 
@@ -66,8 +66,8 @@ class PreviewParameters{
 	 * The method to set the value to documentInfo
 	 * @param {PreviewDocumentInfo} documentInfo An instance of PreviewDocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const PreviewDocumentInfo = require("./preview_document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const PreviewDocumentInfo = (await (import("./preview_document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof PreviewDocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: PreviewDocumentInfo", null, null);
 		}
@@ -130,8 +130,9 @@ class PreviewParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : PreviewParameters,
-	PreviewParameters : PreviewParameters
+export {
+	PreviewParameters as MasterModel,
+	PreviewParameters as PreviewParameters
 }

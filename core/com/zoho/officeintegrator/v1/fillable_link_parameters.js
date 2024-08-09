@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class FillableLinkParameters{
 
@@ -70,8 +70,8 @@ class FillableLinkParameters{
 	 * The method to set the value to documentInfo
 	 * @param {DocumentInfo} documentInfo An instance of DocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const DocumentInfo = require("./document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const DocumentInfo = (await (import("./document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof DocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: DocumentInfo", null, null);
 		}
@@ -93,8 +93,8 @@ class FillableLinkParameters{
 	 * The method to set the value to userInfo
 	 * @param {UserInfo} userInfo An instance of UserInfo
 	 */
-	setUserInfo(userInfo)	{
-		const UserInfo = require("./user_info").MasterModel;
+	async setUserInfo(userInfo)	{
+		const UserInfo = (await (import("./user_info.js"))).MasterModel;
 		if((userInfo != null) && (!(userInfo instanceof UserInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: userInfo EXPECTED TYPE: UserInfo", null, null);
 		}
@@ -160,8 +160,8 @@ class FillableLinkParameters{
 	 * The method to set the value to submitSettings
 	 * @param {FillableSubmissionSettings} submitSettings An instance of FillableSubmissionSettings
 	 */
-	setSubmitSettings(submitSettings)	{
-		const FillableSubmissionSettings = require("./fillable_submission_settings").MasterModel;
+	async setSubmitSettings(submitSettings)	{
+		const FillableSubmissionSettings = (await (import("./fillable_submission_settings.js"))).MasterModel;
 		if((submitSettings != null) && (!(submitSettings instanceof FillableSubmissionSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: submitSettings EXPECTED TYPE: FillableSubmissionSettings", null, null);
 		}
@@ -183,8 +183,8 @@ class FillableLinkParameters{
 	 * The method to set the value to formOptions
 	 * @param {FillableFormOptions} formOptions An instance of FillableFormOptions
 	 */
-	setFormOptions(formOptions)	{
-		const FillableFormOptions = require("./fillable_form_options").MasterModel;
+	async setFormOptions(formOptions)	{
+		const FillableFormOptions = (await (import("./fillable_form_options.js"))).MasterModel;
 		if((formOptions != null) && (!(formOptions instanceof FillableFormOptions)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: formOptions EXPECTED TYPE: FillableFormOptions", null, null);
 		}
@@ -225,8 +225,9 @@ class FillableLinkParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : FillableLinkParameters,
-	FillableLinkParameters : FillableLinkParameters
+export {
+	FillableLinkParameters as MasterModel,
+	FillableLinkParameters as FillableLinkParameters
 }

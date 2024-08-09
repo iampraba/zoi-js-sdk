@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class SheetConversionParameters{
 
@@ -65,8 +65,8 @@ class SheetConversionParameters{
 	 * The method to set the value to outputOptions
 	 * @param {SheetConversionOutputOptions} outputOptions An instance of SheetConversionOutputOptions
 	 */
-	setOutputOptions(outputOptions)	{
-		const SheetConversionOutputOptions = require("./sheet_conversion_output_options").MasterModel;
+	async setOutputOptions(outputOptions)	{
+		const SheetConversionOutputOptions = (await (import("./sheet_conversion_output_options.js"))).MasterModel;
 		if((outputOptions != null) && (!(outputOptions instanceof SheetConversionOutputOptions)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: outputOptions EXPECTED TYPE: SheetConversionOutputOptions", null, null);
 		}
@@ -107,8 +107,9 @@ class SheetConversionParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : SheetConversionParameters,
-	SheetConversionParameters : SheetConversionParameters
+export {
+	SheetConversionParameters as MasterModel,
+	SheetConversionParameters as SheetConversionParameters
 }

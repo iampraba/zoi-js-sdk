@@ -33,7 +33,7 @@ class Header {
 	}
 }
 
-module.exports = {
-	MasterModel: Header,
-	Header: Header
+export {
+	Header as MasterModel,
+	Header as Header
 }

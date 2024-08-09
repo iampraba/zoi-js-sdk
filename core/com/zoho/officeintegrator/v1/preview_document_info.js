@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class PreviewDocumentInfo{
 
@@ -59,8 +59,9 @@ class PreviewDocumentInfo{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : PreviewDocumentInfo,
-	PreviewDocumentInfo : PreviewDocumentInfo
+export {
+	PreviewDocumentInfo as MasterModel,
+	PreviewDocumentInfo as PreviewDocumentInfo
 }

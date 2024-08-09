@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class CreateDocumentParameters{
 
@@ -71,8 +71,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to callbackSettings
 	 * @param {CallbackSettings} callbackSettings An instance of CallbackSettings
 	 */
-	setCallbackSettings(callbackSettings)	{
-		const CallbackSettings = require("./callback_settings").MasterModel;
+	async setCallbackSettings(callbackSettings)	{
+		const CallbackSettings = (await (import("./callback_settings.js"))).MasterModel;
 		if((callbackSettings != null) && (!(callbackSettings instanceof CallbackSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: callbackSettings EXPECTED TYPE: CallbackSettings", null, null);
 		}
@@ -94,8 +94,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to documentDefaults
 	 * @param {DocumentDefaults} documentDefaults An instance of DocumentDefaults
 	 */
-	setDocumentDefaults(documentDefaults)	{
-		const DocumentDefaults = require("./document_defaults").MasterModel;
+	async setDocumentDefaults(documentDefaults)	{
+		const DocumentDefaults = (await (import("./document_defaults.js"))).MasterModel;
 		if((documentDefaults != null) && (!(documentDefaults instanceof DocumentDefaults)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentDefaults EXPECTED TYPE: DocumentDefaults", null, null);
 		}
@@ -117,8 +117,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to editorSettings
 	 * @param {EditorSettings} editorSettings An instance of EditorSettings
 	 */
-	setEditorSettings(editorSettings)	{
-		const EditorSettings = require("./editor_settings").MasterModel;
+	async setEditorSettings(editorSettings)	{
+		const EditorSettings = (await (import("./editor_settings.js"))).MasterModel;
 		if((editorSettings != null) && (!(editorSettings instanceof EditorSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: editorSettings EXPECTED TYPE: EditorSettings", null, null);
 		}
@@ -162,8 +162,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to documentInfo
 	 * @param {DocumentInfo} documentInfo An instance of DocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const DocumentInfo = require("./document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const DocumentInfo = (await (import("./document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof DocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: DocumentInfo", null, null);
 		}
@@ -185,8 +185,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to userInfo
 	 * @param {UserInfo} userInfo An instance of UserInfo
 	 */
-	setUserInfo(userInfo)	{
-		const UserInfo = require("./user_info").MasterModel;
+	async setUserInfo(userInfo)	{
+		const UserInfo = (await (import("./user_info.js"))).MasterModel;
 		if((userInfo != null) && (!(userInfo instanceof UserInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: userInfo EXPECTED TYPE: UserInfo", null, null);
 		}
@@ -208,8 +208,8 @@ class CreateDocumentParameters{
 	 * The method to set the value to uiOptions
 	 * @param {UiOptions} uiOptions An instance of UiOptions
 	 */
-	setUiOptions(uiOptions)	{
-		const UiOptions = require("./ui_options").MasterModel;
+	async setUiOptions(uiOptions)	{
+		const UiOptions = (await (import("./ui_options.js"))).MasterModel;
 		if((uiOptions != null) && (!(uiOptions instanceof UiOptions)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: uiOptions EXPECTED TYPE: UiOptions", null, null);
 		}
@@ -250,8 +250,9 @@ class CreateDocumentParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : CreateDocumentParameters,
-	CreateDocumentParameters : CreateDocumentParameters
+export {
+	CreateDocumentParameters as MasterModel,
+	CreateDocumentParameters as CreateDocumentParameters
 }

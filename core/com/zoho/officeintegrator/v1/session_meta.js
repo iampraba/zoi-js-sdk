@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class SessionMeta{
 
@@ -42,8 +42,8 @@ class SessionMeta{
 	 * The method to set the value to info
 	 * @param {SessionInfo} info An instance of SessionInfo
 	 */
-	setInfo(info)	{
-		const SessionInfo = require("./session_info").MasterModel;
+	async setInfo(info)	{
+		const SessionInfo = (await (import("./session_info.js"))).MasterModel;
 		if((info != null) && (!(info instanceof SessionInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: info EXPECTED TYPE: SessionInfo", null, null);
 		}
@@ -65,8 +65,8 @@ class SessionMeta{
 	 * The method to set the value to userInfo
 	 * @param {SessionUserInfo} userInfo An instance of SessionUserInfo
 	 */
-	setUserInfo(userInfo)	{
-		const SessionUserInfo = require("./session_user_info").MasterModel;
+	async setUserInfo(userInfo)	{
+		const SessionUserInfo = (await (import("./session_user_info.js"))).MasterModel;
 		if((userInfo != null) && (!(userInfo instanceof SessionUserInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: userInfo EXPECTED TYPE: SessionUserInfo", null, null);
 		}
@@ -107,8 +107,9 @@ class SessionMeta{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : SessionMeta,
-	SessionMeta : SessionMeta
+export {
+	SessionMeta as MasterModel,
+	SessionMeta as SessionMeta
 }

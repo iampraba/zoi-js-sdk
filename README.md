@@ -44,18 +44,15 @@ You can include the SDK to your project using:
 
 - Install **Node** from [nodejs.org](https://nodejs.org/en/download/) (if not installed).
 
-- Install **NodeJS SDK**
+- Installing **Office Integrator NodeJS SDK**
     - Navigate to the workspace of your client app.
     - Run the command below:
-
-    ```sh
-    npm install zoi-nodejs-sdk
-    ```
-- The NodeJS SDK will be installed and a package named **/zoi-nodejs-sdk-1.*.*** will be created in the local machine.
-
-- Another method to install the SDK
-    - Add dependencies to the package.json of the node server with the latest version (recommended)
-    - Run **npm install** in the directory which installs all the dependencies mentioned in package.json.
+        ```sh
+        npm install @zoho/office-integrator-sdk
+        ```
+    - Or add **@zoho/office-integrator-sdk** in dependencies section of your projects's package.json with the latest version (recommended)
+        - Run **npm install** in the directory, which installs all the dependencies mentioned in package.json.
+    - The NodeJS SDK will be installed and a package named **/@zoho/office-integrator-sdk-1.\*.\*** will be created in the local machine.
 
 ## Configuration
 
@@ -63,64 +60,43 @@ Before you get started with creating your NodeJS application, you need to regist
 
 | Mandatory Keys    | Optional Keys |
 | :---------------- | :------------ |
-| user              | logger        |
-| environment       |               |
-| apikey            |               |
-----
-
-- Create an instance of **UserSignature** Class that identifies the current user(User who create the apikey).
-
-    ```js
-    const UserSignature = require( "zoi-nodejs-sdk-1.0.0/routes/user_signature").UserSignature;
-    //Create an UserSignature instance that takes user Email as parameter
-    let user = new UserSignature("praburaji93@gmail.com");
-    ```
+| environment, apikey | logger        |
+-------------------------------------
 
 - Configure API environment which decides the domain and the URL to make API calls.
 
     ```js
-    const Environment = require("zoi-nodejs-sdk/routes/dc/environment").Environment;
     /*
-     * Configure the environment
-     * Pass the below domain values based in which data center you signup for apikey. 
-     * USDataCenter - https://api.office-integrator.com
-     * EUDataCenter - https://api.office-integrator.eu
-     * INDataCenter - https://api.office-integrator.in
-     * CNDataCenter - https://api.office-integrator.com.cn
-     * AUDataCenter - https://api.office-integrator.com.au
-     * JPDataCenter - https://api.office-integrator.jp
+     * Refer this help page for api end point domain details -  https://www.zoho.com/officeintegrator/api/v1/getting-started.html
     */
-    let environment = new Environment("https://api.office-integrator.com", null, null);
+    let environment = await new SDK.ApiServer.Production("https://api.office-integrator.com");
     ```
 
-- Create an instance of **[APIKey](models/authenticator/apikey.js)** with the information that you get after registering your Zoho client.
+- Use below script to configure your apikey that you get from [Zoho Office Integrator](https://officeintegrator.zoho.com) dashboard.
 
     ```js
-    const APIKey = require("zoi-nodejs-sdk/models/authenticator/apikey").APIKey;
-    const Constants = require("zoi-nodejs-sdk/utils/util/constants").Constants;
-
     /**
-     * You can configure where the apikey needs to added in the requerst object.
-     * User can either pass the apikey in the parameter(Constants.PARAMS) or (Constants.HEADERS)
+     * You can configure where the apikey needs to added in the request object.
+     * To add apikey to params - addParam("apikey", "<your register apikey from https://www.zoho.com/officeintegrator >")
      */
-    let apikey = new APIKey("<your registered apikey>", Constants.PARAMS);
-    //E.g: let apikey = new APIKey("2ae438cf864488657cc9754a27daa480", Constants.PARAMS);
+     let auth = new SDK.AuthBuilder()
+        .addParam("apikey", "2ae438cf864488657cc9754a27daa480") //Update this apikey with your own apikey signed up in office inetgrator service
+        .authenticationSchema(await new SDK.V1.Authentication().getTokenFlow())
+        .build();
+    let tokens = [ auth ];
     ```
 
 - Create an instance of **Logger** Class to log exception and API information. By default, the SDK constructs a Logger instance with level - INFO and file_path - (sdk_logs.log parallel to node_modules)
 
     ```js
-    const Levels = require("zoi-nodejs-sdk/routes/logger/logger").Levels;
-    const LogBuilder = require("zoi-nodejs-sdk/routes/logger/log_builder").LogBuilder;
-
     /*
     * Create an instance of Logger Class that requires the following
     * level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
     * filePath -> Absolute file path, where messages need to be logged.
     */
-    let logger = new LogBuilder()
-        .level(Levels.INFO)
-        .filePath("/Users/Documents/final-logs.txt")
+    let logger = new SDK.LogBuilder()
+        .level(SDK.Levels.INFO)
+        //.filePath("<file absolute path where logs would be written>") //No I18N
         .build();
     ```
 
@@ -129,32 +105,41 @@ Before you get started with creating your NodeJS application, you need to regist
 Initialize the SDK using the following code.
 
 ```js
-const Constants = require("zoi-nodejs-sdk/utils/util/constants").Constants;
-const UserSignature = require("zoi-nodejs-sdk/routes/user_signature").UserSignature;
-const Levels = require("zoi-nodejs-sdk/routes/logger/logger").Levels;
-const LogBuilder = require("zoi-nodejs-sdk/routes/logger/log_builder").LogBuilder;
-const Environment = require("zoi-nodejs-sdk/routes/dc/environment").Environment;
-const InitializeBuilder = require("zoi-nodejs-sdk/routes/initialize_builder").InitializeBuilder;
-const APIKey = require("zoi-nodejs-sdk/models/authenticator/apikey").APIKey;
+import * as SDK from "@zoho/office-integrator-sdk";
+import { readFileSync } from 'fs';
+const __dirname = import.meta.dirname;
 
 class Initializer {
-    static async initialize() {
-        let user = new UserSignature("praburaji93@gmail.com");
-        let environment = new Environment("https://api.office-integrator.com", null, null);
-        let apikey = new APIKey("2ae438cf864488657cc9754a27daa480", Constants.PARAMS);
-        let logger = new LogBuilder()
-            .level(Levels.INFO)
-            .filePath("./app.log")
-            .build();
-        let initialize = await new InitializeBuilder();
 
-        await initialize.user(user).environment(environment).token(apikey).logger(logger).initialize();
+    //Include office-integrator-sdk package in your package json and the execute this code.
+
+    static async initializeSdk() {
+
+        // Refer this help page for api end point domain details -  https://www.zoho.com/officeintegrator/api/v1/getting-started.html
+        let environment = await new SDK.ApiServer.Production("https://api.office-integrator.com");
+
+        let auth = new SDK.AuthBuilder()
+            .addParam("apikey", "2ae438cf864488657cc9754a27daa480") //Update this apikey with your own apikey signed up in office inetgrator service
+            .authenticationSchema(await new SDK.V1.Authentication().getTokenFlow())
+            .build();
+
+        let tokens = [ auth ];
+
+        //Sdk application log configuration
+        let logger = new SDK.LogBuilder()
+            .level(SDK.Levels.INFO)
+            //.filePath("<file absolute path where logs would be written>") //No I18N
+            .build();
+
+        let initialize = await new SDK.InitializeBuilder();
+
+        await initialize.environment(environment).tokens(tokens).logger(logger).initialize();
 
         console.log("SDK initialized successfully.");
     }
 }
 
-Initializer.initialize();
+Initializer.initializeSdk();
 ```
 
 - You can now access the functionalities of the SDK. Refer to the sample codes to make various API calls through the SDK.
@@ -174,7 +159,7 @@ Whenever the API returns an error response, the **getObject()** returns an insta
 - The **getObject()** returns instance of one of the following classes, based on the return type.
     - For  **application/json** responses
         - **SessionInfo**
-        - **InvaildConfigurationException**
+        - **InvalidConfigurationException**
 
 ### POST, PUT, DELETE Requests
 
@@ -183,7 +168,7 @@ Whenever the API returns an error response, the **getObject()** returns an insta
     - **CreateSheetResponse**
     - **InvaildConfigurationException**
 
-All other exceptions such as SDK anomalies and other unexpected behaviours are thrown under the **[SDKException](core/com/zoho/crm/api/exception/sdk_exception.js)** class.
+All other exceptions such as SDK anomalies and other unexpected behaviours are thrown under the **[SDKException](routes/exception/sdk_exception.js)** class.
 
 ## SDK Sample code
 
@@ -191,16 +176,14 @@ Make sure you have [intialized the sdk](#initializing-the-application) before ru
 
 
 ```js
-
-const V1Operations = require("zoi-nodejs-sdk/core/com/zoho/crm/api/officeintegrator/v1/v1_operations").V1Operations;
-const CreateDocumentParameters = require("zoi-nodejs-sdk/core/com/zoho/crm/api/officeintegrator/v1/create_document_parameters").CreateDocumentParameters;
+import * as SDK from "@zoho/office-integrator-sdk";
 
 class ZohoWriter {
 
     static async createDocument() {
         try {
-            var sdk_operations = new V1Operations();
-            var create_document_parameters = new CreateDocumentParameters();
+            var sdk_operations = new SDK.V1.V1Operations();
+            var create_document_parameters = new SDK.V1.CreateDocumentParameters();
 
             var writer_response = await sdk_operations.createDocument(create_document_parameters);
 
@@ -214,26 +197,14 @@ class ZohoWriter {
 ZohoWriter.createDocument();
 ```
 
-Refer this **[repository](https://github.com/iampraba/zoi-nodejs-sdk-demo-app)** for example codes to all Office Integrator API endpoints.
+Refer this **[repository](https://github.com/zoho/office-integrator-nodejs-sdk-examples)** for example codes to all Office Integrator API endpoints.
 
 
 ## Release Notes
 
-*Version 1.1.1*
+*Version 1.0.0*
 
-- ShowCallbackSettings class removed and CallbackSettings class used instead of above mentioned class.
-- save_url_headers option added in callback_setting configuration.
-
-*Version 1.1.0*
-
-- [Get all writer document session](https://www.zoho.com/officeintegrator/api/v1/zoho-writer-get-document-sessions.html) information api support added
-- [Spreadsheet](https://www.zoho.com/officeintegrator/api/v1/sheet-conversion-api.html) and [Presentation](https://www.zoho.com/officeintegrator/api/v1/show-conversion-api.html) conversion api endpoint support added
-- Language parameter support added for [create document api](https://www.zoho.com/officeintegrator/api/v1/zoho-writer-create-document.html#doc_defaults) endpoint document defaults parameter.
-- Package renamed to *\*/core/com/zoho/officeintegrator/v1/\** from *\*/core/com/zoho/crm/api/officeintegrator/officeintegratorsdk/\**. If your application has [zoi-nodejs-sdk]([url](https://www.npmjs.com/package/zoi-nodejs-sdk)) version below **1.1.0**, please check  your application code and update with above package name as mentioned above.
-- API ResponseWrapper changed to service specific response wrappers.
-    - ZohoWriter api's(/writer/*) will return WriterResponseWrapper instead of ResponseWrapper object.
-    - ZohoSheet api's(/sheet/*) will return SheetResponseWrapper instead of ResponseWrapper object.
-    - ZohoShow api's(/show/*) will return SheetResponseWrapper instead of ResponseWrapper object.
+- Based version released
 
 ## License
 

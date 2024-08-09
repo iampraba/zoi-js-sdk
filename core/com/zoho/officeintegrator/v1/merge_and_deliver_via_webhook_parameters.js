@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class MergeAndDeliverViaWebhookParameters{
 
@@ -95,8 +95,8 @@ class MergeAndDeliverViaWebhookParameters{
 	 * The method to set the value to webhook
 	 * @param {MailMergeWebhookSettings} webhook An instance of MailMergeWebhookSettings
 	 */
-	setWebhook(webhook)	{
-		const MailMergeWebhookSettings = require("./mail_merge_webhook_settings").MasterModel;
+	async setWebhook(webhook)	{
+		const MailMergeWebhookSettings = (await (import("./mail_merge_webhook_settings.js"))).MasterModel;
 		if((webhook != null) && (!(webhook instanceof MailMergeWebhookSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: webhook EXPECTED TYPE: MailMergeWebhookSettings", null, null);
 		}
@@ -291,8 +291,9 @@ class MergeAndDeliverViaWebhookParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : MergeAndDeliverViaWebhookParameters,
-	MergeAndDeliverViaWebhookParameters : MergeAndDeliverViaWebhookParameters
+export {
+	MergeAndDeliverViaWebhookParameters as MasterModel,
+	MergeAndDeliverViaWebhookParameters as MergeAndDeliverViaWebhookParameters
 }

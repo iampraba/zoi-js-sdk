@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class FillableCallbackSettings{
 
@@ -22,8 +22,8 @@ class FillableCallbackSettings{
 	 * The method to set the value to output
 	 * @param {FillableLinkOutputSettings} output An instance of FillableLinkOutputSettings
 	 */
-	setOutput(output)	{
-		const FillableLinkOutputSettings = require("./fillable_link_output_settings").MasterModel;
+	async setOutput(output)	{
+		const FillableLinkOutputSettings = (await (import("./fillable_link_output_settings.js"))).MasterModel;
 		if((output != null) && (!(output instanceof FillableLinkOutputSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: output EXPECTED TYPE: FillableLinkOutputSettings", null, null);
 		}
@@ -152,8 +152,9 @@ class FillableCallbackSettings{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : FillableCallbackSettings,
-	FillableCallbackSettings : FillableCallbackSettings
+export {
+	FillableCallbackSettings as MasterModel,
+	FillableCallbackSettings as FillableCallbackSettings
 }

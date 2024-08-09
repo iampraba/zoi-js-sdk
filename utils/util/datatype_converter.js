@@ -1,9 +1,10 @@
-const Constants = require("./constants").Constants;
+import {Constants} from "./constants.js";
+import moment from 'moment-timezone';
 
 /**
  * This class converts JSON value to the expected object type and vice versa.
  */
-class DatatypeConverter {
+class DataTypeConverter {
     static preConverterMap = new Map();
 
     static postConverterMap = new Map();
@@ -40,6 +41,10 @@ class DatatypeConverter {
 
         var postObject = (obj) => { return this.postConvertObjectData(obj); }
 
+        var stringtoTimeZone = (obj) => { return moment.tz.zone(obj); }
+
+        var timeZonetoSting = (obj) => { return obj.name; }
+
         this.addToMap(Constants.STRING_NAMESPACE, string, string);
 
         this.addToMap(Constants.INTEGER_NAMESPACE, integer, integer);
@@ -57,6 +62,8 @@ class DatatypeConverter {
         this.addToMap(Constants.FLOAT_NAMESPACE, double, double);
 
         this.addToMap(Constants.OBJECT_NAMESPACE, preObject, postObject);
+
+        this.addToMap(Constants.TIMEZONE_NAMESPACE, stringtoTimeZone, timeZonetoSting);
     }
 
     static preConvertObjectData(obj) {
@@ -169,8 +176,7 @@ class DatatypeConverter {
         return obj;
     }
 }
-
-module.exports = {
-    MasterModel: DatatypeConverter,
-    DatatypeConverter: DatatypeConverter
+export {
+    DataTypeConverter as DataTypeConverter,
+    DataTypeConverter as MasterModel
 }

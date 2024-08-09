@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class DocumentDefaults{
 
@@ -156,8 +156,8 @@ class DocumentDefaults{
 	 * The method to set the value to margin
 	 * @param {Margin} margin An instance of Margin
 	 */
-	setMargin(margin)	{
-		const Margin = require("./margin").MasterModel;
+	async setMargin(margin)	{
+		const Margin = (await (import("./margin.js"))).MasterModel;
 		if((margin != null) && (!(margin instanceof Margin)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: margin EXPECTED TYPE: Margin", null, null);
 		}
@@ -198,8 +198,9 @@ class DocumentDefaults{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : DocumentDefaults,
-	DocumentDefaults : DocumentDefaults
+export {
+	DocumentDefaults as MasterModel,
+	DocumentDefaults as DocumentDefaults
 }

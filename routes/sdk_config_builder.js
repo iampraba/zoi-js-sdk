@@ -1,22 +1,15 @@
-const SDKConfig = require('./sdk_config').SDKConfig;
+import {SDKConfig} from "./sdk_config.js";
 
 class SDKConfigBuilder {
-    _autoRefreshFields = false;
-
     _pickListValidation = true;
 
     _timeout = 0;
 
-    /**
-     * This is a setter method to set autoRefreshFields.
-     * @param {Boolean} autoRefreshFields A boolean value
-     * @returns {SDKConfigBuilder} An instance of SDKConfigBuilder
-     */
-    autoRefreshFields(autoRefreshFields) {
-        this._autoRefreshFields = autoRefreshFields;
+    _connectionTimeout = 0;
 
-        return this;
-    }
+    _requestTimeout = 0;
+
+    _socketTimeout = 0;
 
     /**
      * This is a setter method to set pickListValidation.
@@ -41,15 +34,52 @@ class SDKConfigBuilder {
     }
 
     /**
+     * This is a setter method to set connectionTimeout.
+     * @param {number} connectionTimeout
+     * @returns {SDKConfigBuilder} An instance of SDKConfigBuilder
+     */
+    connectionTimeout(connectionTimeout)
+    {
+        this._connectionTimeout = connectionTimeout > 0 ? connectionTimeout : 0;
+
+        return this;
+    }
+
+    /**
+     * This is a setter method to set requestTimeout.
+     * @param {number} requestTimeout
+     * @returns {SDKConfigBuilder} An instance of SDKConfigBuilder
+     */
+    requestTimeout(requestTimeout)
+    {
+        this._requestTimeout = requestTimeout > 0 ? requestTimeout : 0;
+
+        return this;
+    }
+
+    /**
+     * This is a setter method to set socketTimeout.
+     * @param {number} socketTimeout
+     * @returns {SDKConfigBuilder} An instance of SDKConfigBuilder
+     */
+    socketTimeout(socketTimeout)
+    {
+        this._socketTimeout = socketTimeout > 0 ? socketTimeout : 0;
+
+        return this;
+    }
+
+
+    /**
      * The method to build the SDKConfig instance
      * @returns {SDKConfig} An instance of SDKConfig
      */
     build() {
-        return new SDKConfig(this._autoRefreshFields, this._pickListValidation, this._timeout);
+        return new SDKConfig(this._pickListValidation, this._timeout, this._connectionTimeout, this._requestTimeout, this._socketTimeout);
     }
 }
 
-module.exports = {
-    MasterModel: SDKConfigBuilder,
-    SDKConfigBuilder: SDKConfigBuilder
+export {
+    SDKConfigBuilder as MasterModel,
+    SDKConfigBuilder as SDKConfigBuilder
 }

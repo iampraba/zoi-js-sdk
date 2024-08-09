@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class CreateSheetParameters{
 
@@ -70,8 +70,8 @@ class CreateSheetParameters{
 	 * The method to set the value to callbackSettings
 	 * @param {SheetCallbackSettings} callbackSettings An instance of SheetCallbackSettings
 	 */
-	setCallbackSettings(callbackSettings)	{
-		const SheetCallbackSettings = require("./sheet_callback_settings").MasterModel;
+	async setCallbackSettings(callbackSettings)	{
+		const SheetCallbackSettings = (await (import("./sheet_callback_settings.js"))).MasterModel;
 		if((callbackSettings != null) && (!(callbackSettings instanceof SheetCallbackSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: callbackSettings EXPECTED TYPE: SheetCallbackSettings", null, null);
 		}
@@ -93,8 +93,8 @@ class CreateSheetParameters{
 	 * The method to set the value to editorSettings
 	 * @param {SheetEditorSettings} editorSettings An instance of SheetEditorSettings
 	 */
-	setEditorSettings(editorSettings)	{
-		const SheetEditorSettings = require("./sheet_editor_settings").MasterModel;
+	async setEditorSettings(editorSettings)	{
+		const SheetEditorSettings = (await (import("./sheet_editor_settings.js"))).MasterModel;
 		if((editorSettings != null) && (!(editorSettings instanceof SheetEditorSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: editorSettings EXPECTED TYPE: SheetEditorSettings", null, null);
 		}
@@ -138,8 +138,8 @@ class CreateSheetParameters{
 	 * The method to set the value to documentInfo
 	 * @param {DocumentInfo} documentInfo An instance of DocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const DocumentInfo = require("./document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const DocumentInfo = (await (import("./document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof DocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: DocumentInfo", null, null);
 		}
@@ -161,8 +161,8 @@ class CreateSheetParameters{
 	 * The method to set the value to userInfo
 	 * @param {SheetUserSettings} userInfo An instance of SheetUserSettings
 	 */
-	setUserInfo(userInfo)	{
-		const SheetUserSettings = require("./sheet_user_settings").MasterModel;
+	async setUserInfo(userInfo)	{
+		const SheetUserSettings = (await (import("./sheet_user_settings.js"))).MasterModel;
 		if((userInfo != null) && (!(userInfo instanceof SheetUserSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: userInfo EXPECTED TYPE: SheetUserSettings", null, null);
 		}
@@ -184,8 +184,8 @@ class CreateSheetParameters{
 	 * The method to set the value to uiOptions
 	 * @param {SheetUiOptions} uiOptions An instance of SheetUiOptions
 	 */
-	setUiOptions(uiOptions)	{
-		const SheetUiOptions = require("./sheet_ui_options").MasterModel;
+	async setUiOptions(uiOptions)	{
+		const SheetUiOptions = (await (import("./sheet_ui_options.js"))).MasterModel;
 		if((uiOptions != null) && (!(uiOptions instanceof SheetUiOptions)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: uiOptions EXPECTED TYPE: SheetUiOptions", null, null);
 		}
@@ -226,8 +226,9 @@ class CreateSheetParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : CreateSheetParameters,
-	CreateSheetParameters : CreateSheetParameters
+export {
+	CreateSheetParameters as MasterModel,
+	CreateSheetParameters as CreateSheetParameters
 }

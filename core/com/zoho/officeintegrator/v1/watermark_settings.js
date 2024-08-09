@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class WatermarkSettings{
 
@@ -197,8 +197,9 @@ class WatermarkSettings{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : WatermarkSettings,
-	WatermarkSettings : WatermarkSettings
+export {
+	WatermarkSettings as MasterModel,
+	WatermarkSettings as WatermarkSettings
 }

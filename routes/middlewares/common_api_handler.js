@@ -1,26 +1,26 @@
-
-const Initializer = require("../initializer").Initializer;
-const APIHTTPConnector = require("../controllers/api_http_connector").APIHTTPConnector;
-const JSONConverter = require("../../utils/util/json_converter").JSONConverter;
-const XMLConverter = require("../../utils/util/xml_converter").XMLConverter;
-const ParameterMap = require("../../routes/parameter_map").ParameterMap;
-const HeaderMap = require("../../routes/header_map").HeaderMap;
-const Param = require("../../routes/param").Param;
-const Header = require("../../routes/header").Header;
-const Path = require("path");
-const Logger = require('winston');
-const Constants = require("../../utils/util/constants").Constants;
-const FormDataConverter = require("../../utils/util/form_data_converter").FormDataConverter;
-const Downloader = require("../../utils/util/downloader").Downloader;
-const os = require('os');
-const SDKException = require('../../routes/exception/sdk_exception').SDKException;
+import {Constants} from "../../utils/util/constants.js";
+import {FormDataConverter} from "../../utils/util/form_data_converter.js";
+import {XMLConverter} from "../../utils/util/xml_converter.js";
+import {JSONConverter} from "../../utils/util/json_converter.js";
+import {Downloader} from "../../utils/util/downloader.js";
+import {SDKException} from "../exception/sdk_exception.js";
+import {Initializer} from "../initializer.js";
+import {APIHTTPConnector} from "../controllers/api_http_connector.js";
+import {ParameterMap} from "../parameter_map.js";
+import {HeaderMap} from "../header_map.js";
+import pkg from "winston";
+let Logger = pkg;
+import os from "os";
+import {APIResponse} from "../controllers/api_response.js";
+import {Param} from "../param.js";
+import {Header} from "../header.js";
 
 /**
-* This class is to process the API request and its response.
-* Construct the objects that are to be sent as parameters or in the request body with the API.
-* The Request parameter, header and body objects are constructed here.
-* Process the response JSON and converts it to relevant objects in the library.
-*/
+ * This class is to process the API request and its response.
+ * Construct the objects that are to be sent as parameters or in the request body with the API.
+ * The Request parameter, header and body objects are constructed here.
+ * Process the response JSON and converts it to relevant objects in the library.
+ */
 class CommonAPIHandler {
 	apiPath;
 
@@ -39,6 +39,10 @@ class CommonAPIHandler {
 	categoryMethod;
 
 	mandatoryChecker;
+
+	methodName;
+
+	operationClassName;
 
 	/**
 	 * This is a setter method to set an API request content type.
@@ -164,13 +168,12 @@ class CommonAPIHandler {
 
 	/**
 	 * This method is used in constructing API request and response details. To make the Zoho API calls.
-	 * @param {class} className - A Class containing the method return type.
-	 * @param {string} encodeType - A String containing the expected API response content type.
 	 * @see APIHTTPConnector
 	 * @returns {APIResponse} An instance of APIResponse representing the Zoho API response
 	 * @throws {SDKException}
 	 */
-	async apiCall(className, encodeType) {
+	async apiCall() {
+		const Location = (await import("../../models/authenticator/token.js")).Location
 
 		let initializer = await Initializer.getInitializer();
 
@@ -181,7 +184,7 @@ class CommonAPIHandler {
 		var connector = new APIHTTPConnector();
 
 		try {
-			await this.setAPIUrl(connector);
+			await this.setAPIUrl(connector).catch(err => { throw err; });
 		}
 		catch (error) {
 			if (!(error instanceof SDKException)) {
@@ -195,18 +198,31 @@ class CommonAPIHandler {
 
 		connector.setRequestMethod(this.httpMethod);
 
-		connector.setContentType(this.contentType);
+		let environment = (await Initializer.getInitializer()).getEnvironment();
 
 		if (this.header != null && this.header.getHeaderMap().size > 0) {
 			connector.setHeaders(this.header.getHeaderMap());
+			if (environment.getLocation() != null && environment.getLocation().name == Location.HEADER.name)
+			{
+				connector.addHeader(environment.getName(), environment.getValue());
+			}
 		}
 
 		if (this.param != null && this.param.getParameterMap().size > 0) {
 			connector.setParams(this.param.getParameterMap());
+			if (environment.getLocation() != null && environment.getLocation().name == Location.PARAM.name)
+			{
+				connector.addParam(environment.getName(), environment.getValue());
+			}
 		}
 
-		try {
-			await initializer.getToken().authenticate(connector);
+		try
+		{
+			let initializer = await Initializer.getInitializer().catch(err=> {throw err;});
+			if (initializer.getTokens() != null && initializer.getTokens().length > 0) {
+				let tokenConfig = await this.getToken();
+				await tokenConfig[0].authenticate(connector, tokenConfig[1]);
+			}
 		}
 		catch (error) {
 			if (!(error instanceof SDKException)) {
@@ -217,58 +233,58 @@ class CommonAPIHandler {
 
 			throw error;
 		}
-
-		className = className.replace(/\\/g, '/');
-
-		let baseName = className.split("/");
-
-		let fileName = Path.basename(className).split('.').slice(0, -1).join('.');
-
-		let index = baseName.indexOf(Constants.CORE);
-
-		let packageNames = baseName.slice(index, baseName.length - 1);
-
-		packageNames.push(fileName);
-
-		var pack = packageNames.join("/");
-
 		var returnObject = null;
 
 		var converterInstance = null;
 
-		if (this.contentType != null && Constants.IS_GENERATE_REQUEST_BODY.includes(this.httpMethod.toUpperCase())) {
-
-			let requestObject = null;
-
-			let baseName = pack.split("/");
-
-			baseName.pop();
-
-			try {
-				converterInstance = this.getConverterClassInstance(this.contentType.toLowerCase());
-
-				var className = converterInstance.getFileName(this.request.constructor.name);
-
-				baseName.push(className);
-
-				requestObject = await converterInstance.formRequest(this.request, baseName.join("/"), null, null);
-			}catch (error) {
-				if (!(error instanceof SDKException)) {
-					error = new SDKException(null, null, null, error);
+		if (Constants.GENERATE_REQUEST_BODY.includes(this.httpMethod.toUpperCase()) && this.request != null)
+		{
+			let request;
+			try
+			{
+				let pack = await this.getClassName(false, null, null);
+				if (pack != null) {
+					converterInstance = await this.getConverterClassInstance(this.contentType.toLowerCase());
+					connector.setContentType(this.contentType);
+					let isSet = false;
+					if (typeof pack === 'object' && pack != null)
+					{
+						let pack1 = pack;
+						if (pack1.hasOwnProperty(Constants.CLASSES))
+						{
+							const classes = pack1[Constants.CLASSES];
+							if (Array.isArray(classes) && classes.length === 1 && classes[0].toLowerCase() === 'object') {
+								connector.setRequestBody(this.request);
+								isSet = true;
+							}
+						}
+					}
+					if (!isSet)
+					{
+						request = await converterInstance.getWrappedRequest(this.request, pack);
+						connector.setRequestBody(request);
+					}
 				}
-
-				Logger.error(Constants.FORM_REQUEST_EXCEPTION, error);
-
-				throw error;
 			}
-
-			connector.setRequestBody(requestObject);
+			catch (error) {
+				if (error instanceof SDKException)
+				{
+					Logger.error(Constants.FORM_REQUEST_EXCEPTION, error);
+					throw error
+				}
+				else{
+					error = new SDKException(null, null, null, error);
+					Logger.error(Constants.FORM_REQUEST_EXCEPTION, error);
+					throw error;
+				}
+			}
 		}
 
-		try {
-			connector.headers.set(Constants.ZOHO_SDK, os.platform() + "/" + os.release() + "/nodejs-2.1/" + process.version + ":" + Constants.SDK_VERSION);
 
-			let response = await connector.fireRequest(converterInstance);
+		try {
+			let response = await connector.fireRequest(converterInstance).catch(err => { throw err; });
+
+			let statusCode = response.statusCode;
 
 			let headerMap = await this.getHeaders(response.headers);
 
@@ -279,15 +295,32 @@ class CommonAPIHandler {
 
 				converterInstance = this.getConverterClassInstance(contentType.toLowerCase());
 
-				returnObject = await converterInstance.getWrappedResponse(response, pack);
+				let pack = await this.getClassName(true, statusCode, contentType);
+
+				let returnObject = null;
+
+				let responseJSON = null;
+
+				if (pack != null)
+				{
+					let responseObject = await converterInstance.getWrappedResponse(response, pack);
+					if (responseObject != null)
+					{
+						returnObject = responseObject[0];
+						if (responseObject.length == 2)
+						{
+							responseJSON = responseObject[1];
+						}
+					}
+				}
+				return new APIResponse(headerMap, statusCode, returnObject, responseJSON);
+
 			}
 			else {
 				Logger.info(Constants.API_ERROR_RESPONSE + response.statusCode.toString());
 			}
 
-			let APIResponse = require("../controllers/api_response").APIResponse;
-
-			return new APIResponse(headerMap, response.statusCode, returnObject);
+			return new APIResponse(headerMap, response.statusCode, returnObject, null);
 		}
 		catch (error) {
 			if (!(error instanceof SDKException)) {
@@ -298,6 +331,97 @@ class CommonAPIHandler {
 
 			throw error;
 		}
+	}
+
+	async getToken()
+	{
+		let authenticationTypes = await this.getRequestMethodDetails(this.operationClassName);
+		if(authenticationTypes != null)
+		{
+			for (let token of (await Initializer.getInitializer()).getTokens())
+			{
+				for (let authenticationType of authenticationTypes)
+				{
+					let authentication =  authenticationType;
+					let schemaName = authentication[Constants.SCHEMA_NAME];
+					if(schemaName == token.getAuthenticationSchema().getSchema())
+					{
+						return [token, authentication];
+					}
+				}
+			}
+		}
+		return [(await Initializer.getInitializer()).getTokens()[0], null];
+	}
+
+	async getRequestMethodDetails(operationsClassName)
+	{
+		try
+		{
+			operationsClassName = await this.getFileName(operationsClassName).catch(err=> { throw err; });
+
+			if(Initializer.jsonDetails.hasOwnProperty(operationsClassName.toLowerCase()))
+			{
+				let classDetails = Initializer.jsonDetails[operationsClassName.toLowerCase()];
+				let methodName = this.getMethodName();
+				if(classDetails.hasOwnProperty(methodName))
+				{
+					let methodDetails = classDetails[methodName];
+					if(methodDetails.hasOwnProperty(Constants.AUTHENTICATION))
+					{
+						return methodDetails[Constants.AUTHENTICATION];
+					}
+					else if (classDetails.hasOwnProperty(Constants.AUTHENTICATION))
+					{
+						return classDetails[Constants.AUTHENTICATION];
+					}
+					return null;
+				}
+				else
+				{
+					throw new SDKException(null, Constants.SDK_OPERATIONS_METHOD_DETAILS_NOT_FOUND_IN_JSON_DETAILS_FILE);
+				}
+			}
+			else
+			{
+				throw new SDKException(null, Constants.SDK_OPERATIONS_CLASS_DETAILS_NOT_FOUND_IN_JSON_DETAILS_FILE);
+			}
+		}
+		catch(error)
+		{
+			if (error instanceof SDKException)
+			{
+				throw error;
+			}
+			else {
+				let exception = new SDKException(null, null, null, error);
+				Logger.error(Constants.API_CALL_EXCEPTION, exception);
+				throw exception;
+			}
+		}
+	}
+
+	async getFileName(name) {
+		let classPath = []
+		let spl = name.toString().split(".");
+		for(let name of spl) {
+			let name1 = await this.getSplitFileName(name);
+			classPath.push(name1.join("_"))
+		}
+		return "core/" + classPath.join('/'); //No i18N
+	}
+
+	async getSplitFileName(className) {
+		let fileName = []
+		let nameParts = className.split(/([A-Z][a-z]+)/).filter(function (e) { return e });
+
+		fileName.push(nameParts[0].toLowerCase());
+
+		for (let i = 1; i < nameParts.length; i++) {
+			fileName.push(nameParts[i].toLowerCase());
+		}
+
+		return fileName;
 	}
 
 	async getHeaders(headers) {
@@ -377,12 +501,157 @@ class CommonAPIHandler {
 			case "video/3gpp":
 			case "video/3gpp2":
 			case "font/ttf":
-			case "docx":
 				type = new Downloader(this);
 				break;
 		}
 
 		return type;
+	}
+
+	async getClassName(isResponse, statusCode, mimeType)
+	{
+		let jsonDetails = Initializer.jsonDetails;
+		var operationClassName = await this.getFileName(this.operationClassName);
+		if (jsonDetails.hasOwnProperty(operationClassName))
+		{
+			let methods = jsonDetails[operationClassName.toLowerCase()];
+			let methodName = this.getMethodName();
+			if (methods.hasOwnProperty(methodName))
+			{
+				let methodDetails = methods[methodName];
+				if(isResponse)
+				{
+					if(methodDetails.hasOwnProperty(Constants.RESPONSE))
+					{
+						let response = methodDetails[Constants.RESPONSE];
+						if(response.hasOwnProperty(statusCode.toString()))
+						{
+							let contentResponse = response[statusCode.toString()];
+							for(let content of contentResponse)
+							{
+								let contentJSON = content;
+								if(contentJSON.hasOwnProperty(mimeType))
+								{
+									return contentJSON[mimeType];
+								}
+							}
+							Logger.error(Constants.API_CALL_EXCEPTION);
+						}
+						else
+						{
+							Logger.error(Constants.API_CALL_EXCEPTION);
+						}
+					}
+				}
+				else
+				{
+					if(methodDetails.hasOwnProperty(Constants.REQUEST))
+					{
+						return await this.getRequestClassName(methodDetails[Constants.REQUEST]).catch(err=>{ throw err; });
+					}
+				}
+			}
+			else
+			{
+				Logger.error(Constants.API_CALL_EXCEPTION);
+			}
+		}
+		else
+		{
+			Logger.error(Constants.API_CALL_EXCEPTION);
+		}
+		return null;
+	}
+	async getRequestClassName(requests)
+	{
+		let name = this.request.constructor.name;
+		if (this.request instanceof Array)
+		{
+			name = this.request[0].constructor.name;
+		}
+		for (let type in requests)
+		{
+			let contents = requests[type];
+			for (let content1 of contents)
+			{
+				let content = content1;
+				if (content.hasOwnProperty(Constants.INTERFACE) && content[Constants.INTERFACE])
+				{
+					let interfaceName = content[Constants.CLASSES][0];
+					if (interfaceName == name)
+					{
+						this.contentType = type;
+						return content;
+					}
+					let classDetail = Initializer.jsonDetails[interfaceName];
+					for (let groupType in classDetail.keys)
+					{
+						let groupTypeContent = classDetail[groupType];
+						let classes =  groupTypeContent[Constants.CLASSES];
+						for (let className in classes)
+						{
+							if (className.toString() == name)
+							{
+								this.contentType = type;
+								return content;
+							}
+						}
+					}
+				}
+				else
+				{
+					let classes = content[Constants.CLASSES];
+
+					for (let className of classes)
+					{
+						let classSplit = className.split("/");
+						className = this.buildName(classSplit[classSplit.length - 1]);
+						className = className.substring(0, 1).toUpperCase().concat(className.substring(1, className.length));
+						if (className.toString() == name)
+						{
+							this.contentType = type;
+							return content;
+						}
+					}
+					if (classes.length == 1 && classes[0].toLowerCase === 'object')
+					{
+						this.contentType = type;
+						return content;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	buildName(memberName) {
+		let name = memberName.toLowerCase().split("_");
+
+		var index = 0;
+
+		if (name.length == 0) {
+			index = 1;
+		}
+
+		var sdkName = name[0]
+
+		sdkName = sdkName[0].toLowerCase() + sdkName.slice(1);
+
+		index = 1;
+
+		for (var nameIndex = index; nameIndex < name.length; nameIndex++) {
+			var fieldName = name[nameIndex];
+
+			var firstLetterUppercase = "";
+
+			if (fieldName.length > 0) {
+				firstLetterUppercase = fieldName[0].toUpperCase() + fieldName.slice(1);
+			}
+
+			sdkName = sdkName.concat(firstLetterUppercase);
+		}
+
+		return sdkName;
 	}
 
 	async setAPIUrl(connector) {
@@ -391,25 +660,11 @@ class CommonAPIHandler {
 		let initializer = await Initializer.getInitializer();
 
 		if (this.apiPath.toString().includes(Constants.HTTP)) {
-			if (this.apiPath.toString().includes(Constants.CONTENT_API_URL)) {
-				apiPath = apiPath.concat(initializer.getEnvironment().getFileUploadUrl())
-
-				try {
-					const myURL = new URL(this.apiPath);
-
-					apiPath = apiPath.concat(myURL.pathname);
-
-				} catch (error) {
-					throw new SDKException(Constants.INVALID_URL_ERROR, null, null, error);
-				}
+			if (this.apiPath.substring(0, 1) == "/") {
+				this.apiPath = this.apiPath.substring(1);
 			}
-			else {
-				if (this.apiPath.substring(0, 1) == "/") {
-					this.apiPath = this.apiPath.substring(1);
-				}
 
-				apiPath = apiPath.concat(this.apiPath);
-			}
+			apiPath = apiPath.concat(this.apiPath);
 		}
 		else {
 			apiPath = apiPath.concat(initializer.getEnvironment().getUrl());
@@ -421,6 +676,23 @@ class CommonAPIHandler {
 	}
 
 	/**
+	 * This is a getter method to get operationClassName
+	 * @returns {string} - A string value representing operationClassName
+	 */
+	getOperationClassName()
+	{
+		return this.operationClassName;
+	}
+
+	/**
+	 * This is a setter method to set operationClassName
+	 * @param {string} operationClassName - A string value
+	 */
+	setOperationClassName(operationClassName)
+	{
+		this.operationClassName = operationClassName;
+	}
+	/**
 	 * This is a getter method to get mandatoryChecker
 	 * @returns {Boolean} - A Boolean value representing mandatoryChecker
 	 */
@@ -430,7 +702,7 @@ class CommonAPIHandler {
 
 	/**
 	 * This is a setter method to set mandatoryChecker
-	 * @param {Bool} mandatoryChecker - A Boolean value
+	 * @param {Boolean} mandatoryChecker - A Boolean value
 	 */
 	setMandatoryChecker(mandatoryChecker) {
 		this.mandatoryChecker = mandatoryChecker;
@@ -467,9 +739,19 @@ class CommonAPIHandler {
 	getAPIPath() {
 		return this.apiPath;
 	}
+
+	getMethodName()
+	{
+		return this.buildName(this.methodName);
+	}
+
+	setMethodName(methodName)
+	{
+		this.methodName = methodName;
+	}
 }
 
-module.exports = {
-	MasterModel: CommonAPIHandler,
-	CommonAPIHandler: CommonAPIHandler
-};
+export {
+	CommonAPIHandler as MasterModel,
+	CommonAPIHandler as CommonAPIHandler
+}

@@ -1,6 +1,7 @@
-const HeaderParamValidator = require("../utils/util/header_param_validator").HeaderParamValidator;
-const SDKException = require('../routes/exception/sdk_exception').SDKException;
-const Constants = require("../utils/util/constants").Constants;
+import {DataTypeConverter} from "../utils/util/datatype_converter.js";
+import {HeaderParamValidator} from "../utils/util/header_param_validator.js";
+import {Constants} from "../utils/util/constants.js";
+import {SDKException} from "./exception/sdk_exception.js";
 
 /**
  * This class represents the HTTP parameter name and value.
@@ -46,16 +47,29 @@ class ParameterMap {
 		if (paramClassName != null) {
 			let headerParamValidator = new HeaderParamValidator();
 
-			parsedParamValue = await headerParamValidator.validate(param, value);
+			parsedParamValue = await headerParamValidator.validate(paramName, paramClassName, value).catch(err => { throw err; });
+		}
+		else {
+			try {
+				let type = typeof value;
+				parsedParamValue = DataTypeConverter.postConvert(value, type);
+			}
+			catch(ex)
+			{
+				parsedParamValue = value;
+			}
 		}
 
+		if (typeof parsedParamValue == "object")
+		{
+			parsedParamValue = JSON.stringify(parsedParamValue);
+		}
 		if (this.parameterMap.has(paramName) && this.parameterMap.get(paramName) != null) {
 			let paramValue = this.parameterMap.get(paramName)
 
 			paramValue = paramValue.concat(",", parsedParamValue.toString());
 
 			this.parameterMap.set(paramName, paramValue);
-
 		}
 		else {
 			this.parameterMap.set(paramName, parsedParamValue.toString());
@@ -63,7 +77,7 @@ class ParameterMap {
 	}
 }
 
-module.exports = {
-	MasterModel: ParameterMap,
-	ParameterMap: ParameterMap
+export {
+	ParameterMap as MasterModel,
+	ParameterMap as ParameterMap
 }

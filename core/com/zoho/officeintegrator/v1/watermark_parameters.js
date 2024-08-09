@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class WatermarkParameters{
 
@@ -65,8 +65,8 @@ class WatermarkParameters{
 	 * The method to set the value to watermarkSettings
 	 * @param {WatermarkSettings} watermarkSettings An instance of WatermarkSettings
 	 */
-	setWatermarkSettings(watermarkSettings)	{
-		const WatermarkSettings = require("./watermark_settings").MasterModel;
+	async setWatermarkSettings(watermarkSettings)	{
+		const WatermarkSettings = (await (import("./watermark_settings.js"))).MasterModel;
 		if((watermarkSettings != null) && (!(watermarkSettings instanceof WatermarkSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: watermarkSettings EXPECTED TYPE: WatermarkSettings", null, null);
 		}
@@ -107,8 +107,9 @@ class WatermarkParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : WatermarkParameters,
-	WatermarkParameters : WatermarkParameters
+export {
+	WatermarkParameters as MasterModel,
+	WatermarkParameters as WatermarkParameters
 }

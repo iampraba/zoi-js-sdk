@@ -1,8 +1,6 @@
-const Constants = require('../utils/util/constants').Constants;
-
-const Utility = require("../utils/util/utility").Utility;
-
-const RequestProxy = require("./request_proxy").RequestProxy;
+import {RequestProxy} from "./request_proxy.js";
+import {Constants} from "../utils/util/constants.js";
+import {Utility} from "../utils/util/utility.js";
 
 class ProxyBuilder {
     _host;
@@ -50,7 +48,7 @@ class ProxyBuilder {
     }
 }
 
-module.exports = {
-    MasterModel: ProxyBuilder,
-    ProxyBuilder: ProxyBuilder
+export {
+    ProxyBuilder as MasterModel,
+    ProxyBuilder as ProxyBuilder
 }

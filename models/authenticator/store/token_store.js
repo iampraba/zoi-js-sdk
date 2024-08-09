@@ -1,5 +1,5 @@
-const UserSignature = require('../../../routes/user_signature').UserSignature;
-const Token = require("../token").Token;
+import {Token} from "../token.js";
+import {SDKException} from "../../../routes/exception/sdk_exception.js";
 
 /**
  * This class stores the user token details.
@@ -8,36 +8,33 @@ class TokenStore {
 
     /**
      This method is used to get user token details.
-     * @param {UserSignature} user - A UserSignature class instance.
      * @param {Token} token - A Token class instance.
      * @returns {Token} A Token class instance representing the user token details.
      * @throws {SDKException}
      */
-    getToken(user, token) { }
+    findToken(token) { }
 
     /**
      * This method is used to retrieve the user token details based on unique ID
      * @param {String} id - A String representing the unique ID
-     * @param {Token} token - A Token class instance.
      * @return {Token} A Token class instance representing the user token details.
      * @throws SDKException
      */
-    getTokenById(id, token) { }
+    findTokenById(id) { }
 
     /**
      * This method is used to store user token details.
-     * @param {UserSignature} user - A UserSignature class instance.
      * @param {Token} token - A Token class instance.
      * @throws {SDKException}
      */
-    saveToken(user, token) { }
+    saveToken(token) { }
 
     /**
      This method is used to delete user token details.
-     * @param {Token} token - A Token class instance.
-     * @throws {SDKException}
+     * @param {String} id - A String representing the unique ID
+     *  @throws {SDKException}
      */
-    deleteToken(token) { }
+    deleteToken(id) { }
 
     /**
      * The method to retrieve all the stored tokens.
@@ -53,7 +50,4 @@ class TokenStore {
     deleteTokens() { }
 }
 
-module.exports = {
-    MasterModel: TokenStore,
-    TokenStore: TokenStore
-}
+export {TokenStore as MasterModel, TokenStore as TokenStore}

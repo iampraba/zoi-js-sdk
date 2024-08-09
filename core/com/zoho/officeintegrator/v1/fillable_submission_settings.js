@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class FillableSubmissionSettings{
 
@@ -20,8 +20,8 @@ class FillableSubmissionSettings{
 	 * The method to set the value to callbackOptions
 	 * @param {FillableCallbackSettings} callbackOptions An instance of FillableCallbackSettings
 	 */
-	setCallbackOptions(callbackOptions)	{
-		const FillableCallbackSettings = require("./fillable_callback_settings").MasterModel;
+	async setCallbackOptions(callbackOptions)	{
+		const FillableCallbackSettings = (await (import("./fillable_callback_settings.js"))).MasterModel;
 		if((callbackOptions != null) && (!(callbackOptions instanceof FillableCallbackSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: callbackOptions EXPECTED TYPE: FillableCallbackSettings", null, null);
 		}
@@ -106,8 +106,9 @@ class FillableSubmissionSettings{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : FillableSubmissionSettings,
-	FillableSubmissionSettings : FillableSubmissionSettings
+export {
+	FillableSubmissionSettings as MasterModel,
+	FillableSubmissionSettings as FillableSubmissionSettings
 }

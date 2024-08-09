@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class SheetUiOptions{
 
@@ -59,8 +59,9 @@ class SheetUiOptions{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : SheetUiOptions,
-	SheetUiOptions : SheetUiOptions
+export {
+	SheetUiOptions as MasterModel,
+	SheetUiOptions as SheetUiOptions
 }

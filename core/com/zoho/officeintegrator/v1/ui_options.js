@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class UiOptions{
 
@@ -128,8 +128,9 @@ class UiOptions{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : UiOptions,
-	UiOptions : UiOptions
+export {
+	UiOptions as MasterModel,
+	UiOptions as UiOptions
 }

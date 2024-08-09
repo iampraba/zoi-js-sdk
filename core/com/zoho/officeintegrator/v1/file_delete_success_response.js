@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class FileDeleteSuccessResponse{
 
@@ -59,8 +59,9 @@ class FileDeleteSuccessResponse{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : FileDeleteSuccessResponse,
-	FileDeleteSuccessResponse : FileDeleteSuccessResponse
+export {
+	FileDeleteSuccessResponse as MasterModel,
+	FileDeleteSuccessResponse as FileDeleteSuccessResponse
 }

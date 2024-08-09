@@ -1,45 +1,30 @@
-const Constants = require('../utils/util/constants').Constants;
-
-const SDKException = require('../routes/exception/sdk_exception').SDKException;
 
 /**
  * This class represents the Zoho User.
  */
 class UserSignature {
 
-	_email;
+	_name;
 
 	/**
-	 * Creates an UserSignature class instance with the specified user email.
-	 * @param {string} email - A String containing the Zoho user email.
+	 * Creates an UserSignature class instance with the specified user name.
+	 * @param {string} name - A String containing the Zoho user name.
 	 */
-	constructor(email) {
+	constructor(name) {
 
-		if (!Constants.REGULAR_EXPRESSION.test(email)) {
-			let error = {};
-
-			error[Constants.ERROR_HASH_FIELD] = Constants.EMAIL;
-
-			error[Constants.ERROR_HASH_EXPECTED_TYPE] = Constants.EMAIL;
-
-			let ex = new SDKException(Constants.USER_SIGNATURE_ERROR, null, error);
-
-			throw ex;
-		}
-
-		this._email = email;
+		this._name = name;
 	}
 
 	/**
-	 * This is a getter method to get user email.
-	 * @returns {string} A String representing the Zoho user email.
+	 * This is a getter method to get user name.
+	 * @returns {string} A String representing the Zoho user name.
 	 */
-	getEmail() {
-		return this._email;
+	getName() {
+		return this._name;
 	}
 }
 
-module.exports = {
-	MasterModel: UserSignature,
-	UserSignature: UserSignature
-};
+export {
+	UserSignature as MasterModel,
+	UserSignature as UserSignature
+}

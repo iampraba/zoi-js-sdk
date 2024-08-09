@@ -1,9 +1,11 @@
-const fs = require("fs");
-const Constants = require("../../utils/util/constants").Constants;
-const got = require("got");
-const Logger = require("winston");
-const tunnel = require("tunnel");
-const Initializer = require("../initializer").Initializer;
+import {Constants} from "../../utils/util/constants.js";
+import {Initializer} from "../initializer.js";
+import got from "got";
+import pkg from "winston";
+let Logger = pkg;
+import tunnel from "tunnel";
+import { FormDataConverter }  from "../../utils/util/form_data_converter.js";  // No I18N
+
 
 /**
  * This module is to make HTTP connections, trigger the requests and receive the response
@@ -112,8 +114,8 @@ class APIHTTPConnector {
 	}
 
 	getRequestBody() {
-        return this.requestBody;
-    }
+		return this.requestBody;
+	}
 
 	/**
 	 * This method makes the Zoho Rest API request.
@@ -126,6 +128,10 @@ class APIHTTPConnector {
 
 		var modifiedRequestBody = "";
 
+		if (this.contentType != null && !(converterInstance instanceof FormDataConverter)) {
+			this.setContentTypeHeader();
+		}
+
 		if (this.headers) {
 			this.headers.forEach(function (value, key) {
 				apiHeaders[key] = value;
@@ -137,7 +143,7 @@ class APIHTTPConnector {
 		}
 
 		if (Array.from(Object.keys(this.requestBody)).length > 0) {
-			modifiedRequestBody = await converterInstance.appendToRequest(this, null);
+			modifiedRequestBody = await converterInstance.appendToRequest(this, null).catch(err => { throw err; });
 		}
 
 		let initializer = await Initializer.getInitializer();
@@ -214,6 +220,11 @@ class APIHTTPConnector {
 		this.url = this.url + '?' + params;
 	}
 
+	setContentTypeHeader() {
+		this.headers.set(Constants.CONTENT_TYPE_HEADER, this.contentType);
+		return;
+	}
+
 	toString() {
 		let headers = new Map(this.headers);
 
@@ -237,7 +248,7 @@ class APIHTTPConnector {
 	}
 }
 
-module.exports = {
-	MasterModel: APIHTTPConnector,
-	APIHTTPConnector: APIHTTPConnector
+export  {
+	APIHTTPConnector as MasterModel,
+	APIHTTPConnector as APIHTTPConnector
 }

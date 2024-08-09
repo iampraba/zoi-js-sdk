@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class FileBodyWrapper{
 
@@ -60,8 +60,9 @@ class FileBodyWrapper{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : FileBodyWrapper,
-	FileBodyWrapper : FileBodyWrapper
+export {
+	FileBodyWrapper as MasterModel,
+	FileBodyWrapper as FileBodyWrapper
 }

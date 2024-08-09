@@ -1,7 +1,7 @@
-const APIResponse = require("../../../../../routes/controllers/api_response").MasterModel;
-const CommonAPIHandler = require("../../../../../routes/middlewares/common_api_handler").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {APIResponse} from "../../../../../routes/controllers/api_response.js";
+import {CommonAPIHandler} from "../../../../../routes/middlewares/common_api_handler.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class V1Operations{
 	/**
@@ -11,7 +11,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createDocument(request)	{
-		const CreateDocumentParameters = require("./create_document_parameters").MasterModel;
+		const CreateDocumentParameters = (await (import("./create_document_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof CreateDocumentParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CreateDocumentParameters", null, null);
 		}
@@ -20,11 +20,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/documents");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -35,7 +35,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createDocumentPreview(request)	{
-		const PreviewParameters = require("./preview_parameters").MasterModel;
+		const PreviewParameters = (await (import("./preview_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof PreviewParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: PreviewParameters", null, null);
 		}
@@ -44,11 +44,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/document/preview");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_document_preview");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -59,7 +59,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createWatermarkDocument(request)	{
-		const WatermarkParameters = require("./watermark_parameters").MasterModel;
+		const WatermarkParameters = (await (import("./watermark_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof WatermarkParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: WatermarkParameters", null, null);
 		}
@@ -68,11 +68,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/document/watermark");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_watermark_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -83,7 +83,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createMailMergeTemplate(request)	{
-		const MailMergeTemplateParameters = require("./mail_merge_template_parameters").MasterModel;
+		const MailMergeTemplateParameters = (await (import("./mail_merge_template_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof MailMergeTemplateParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: MailMergeTemplateParameters", null, null);
 		}
@@ -92,11 +92,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/templates");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_mail_merge_template");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -107,7 +107,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async getMergeFields(request)	{
-		const GetMergeFieldsParameters = require("./get_merge_fields_parameters").MasterModel;
+		const GetMergeFieldsParameters = (await (import("./get_merge_fields_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof GetMergeFieldsParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: GetMergeFieldsParameters", null, null);
 		}
@@ -117,10 +117,10 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_merge_fields");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -131,7 +131,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async mergeAndDeliverViaWebhook(request)	{
-		const MergeAndDeliverViaWebhookParameters = require("./merge_and_deliver_via_webhook_parameters").MasterModel;
+		const MergeAndDeliverViaWebhookParameters = (await (import("./merge_and_deliver_via_webhook_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof MergeAndDeliverViaWebhookParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: MergeAndDeliverViaWebhookParameters", null, null);
 		}
@@ -141,10 +141,10 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("merge_and_deliver_via_webhook");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -155,7 +155,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async mergeAndDownloadDocument(request)	{
-		const MergeAndDownloadDocumentParameters = require("./merge_and_download_document_parameters").MasterModel;
+		const MergeAndDownloadDocumentParameters = (await (import("./merge_and_download_document_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof MergeAndDownloadDocumentParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: MergeAndDownloadDocumentParameters", null, null);
 		}
@@ -164,11 +164,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/document/merge");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("merge_and_download_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -179,7 +179,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createFillableTemplateDocument(request)	{
-		const CreateDocumentParameters = require("./create_document_parameters").MasterModel;
+		const CreateDocumentParameters = (await (import("./create_document_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof CreateDocumentParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CreateDocumentParameters", null, null);
 		}
@@ -188,11 +188,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/fillabletemplates");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_fillable_template_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -203,7 +203,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createFillableLink(request)	{
-		const FillableLinkParameters = require("./fillable_link_parameters").MasterModel;
+		const FillableLinkParameters = (await (import("./fillable_link_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof FillableLinkParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: FillableLinkParameters", null, null);
 		}
@@ -212,11 +212,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/fillabletemplates/fillablelink");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_fillable_link");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -227,7 +227,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async convertDocument(request)	{
-		const DocumentConversionParameters = require("./document_conversion_parameters").MasterModel;
+		const DocumentConversionParameters = (await (import("./document_conversion_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof DocumentConversionParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: DocumentConversionParameters", null, null);
 		}
@@ -236,11 +236,35 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/document/convert");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("convert_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
+
+	}
+
+	/**
+	 * The method to combine pdfs
+	 * @param {CombinePDFsParameters} request An instance of CombinePDFsParameters
+	 * @returns {APIResponse} An instance of APIResponse
+	 * @throws {SDKException}
+	 */
+	async combinePdfs(request)	{
+		const CombinePdFsParameters = (await (import("./combine_pd_fs_parameters.js"))).MasterModel;
+		if((request != null) && (!(request instanceof CombinePDFsParameters)))	{
+			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CombinePDFsParameters", null, null);
+		}
+		var handlerInstance = new CommonAPIHandler();
+		var apiPath = '';
+		apiPath = apiPath.concat("/writer/officeapi/v1/document/combine");
+		handlerInstance.setAPIPath(apiPath);
+		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
+		handlerInstance.setRequest(request);
+		handlerInstance.setMethodName("combine_pdfs");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -251,7 +275,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async compareDocument(request)	{
-		const CompareDocumentParameters = require("./compare_document_parameters").MasterModel;
+		const CompareDocumentParameters = (await (import("./compare_document_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof CompareDocumentParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CompareDocumentParameters", null, null);
 		}
@@ -260,11 +284,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/writer/officeapi/v1/document/compare");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("compare_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -286,8 +310,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_all_sessions");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -308,8 +333,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -330,8 +356,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -352,8 +379,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_document_info");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -374,8 +402,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let WriterResponseHandler = require.resolve("./writer_response_handler");
-		return handlerInstance.apiCall(WriterResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_document");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -386,7 +415,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createSheet(request)	{
-		const CreateSheetParameters = require("./create_sheet_parameters").MasterModel;
+		const CreateSheetParameters = (await (import("./create_sheet_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof CreateSheetParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CreateSheetParameters", null, null);
 		}
@@ -395,11 +424,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/sheet/officeapi/v1/spreadsheet");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_sheet");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -410,7 +439,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createSheetPreview(request)	{
-		const SheetPreviewParameters = require("./sheet_preview_parameters").MasterModel;
+		const SheetPreviewParameters = (await (import("./sheet_preview_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof SheetPreviewParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: SheetPreviewParameters", null, null);
 		}
@@ -419,11 +448,41 @@ class V1Operations{
 		apiPath = apiPath.concat("/sheet/officeapi/v1/spreadsheet/preview");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_sheet_preview");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
+
+	}
+
+	/**
+	 * The method to download sheet
+	 * @param {String} documentid A String representing the documentid
+	 * @param {SheetDownloadParameters} request An instance of SheetDownloadParameters
+	 * @returns {APIResponse} An instance of APIResponse
+	 * @throws {SDKException}
+	 */
+	async downloadSheet(documentid, request)	{
+		const SheetDownloadParameters = (await (import("./sheet_download_parameters.js"))).MasterModel;
+		if((!(Object.prototype.toString.call(documentid) == "[object String]")))	{
+			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentid EXPECTED TYPE: String", null, null);
+		}
+		if((request != null) && (!(request instanceof SheetDownloadParameters)))	{
+			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: SheetDownloadParameters", null, null);
+		}
+		var handlerInstance = new CommonAPIHandler();
+		var apiPath = '';
+		apiPath = apiPath.concat("/sheet/officeapi/v1/spreadsheet/");
+		apiPath = apiPath.concat(documentid.toString());
+		apiPath = apiPath.concat("/download");
+		handlerInstance.setAPIPath(apiPath);
+		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
+		handlerInstance.setRequest(request);
+		handlerInstance.setMethodName("download_sheet");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -434,7 +493,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async convertSheet(request)	{
-		const SheetConversionParameters = require("./sheet_conversion_parameters").MasterModel;
+		const SheetConversionParameters = (await (import("./sheet_conversion_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof SheetConversionParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: SheetConversionParameters", null, null);
 		}
@@ -443,11 +502,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/sheet/officeapi/v1/spreadsheet/convert");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("convert_sheet");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -468,8 +527,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_sheet_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -490,8 +550,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_sheet_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -512,8 +573,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let SheetResponseHandler = require.resolve("./sheet_response_handler");
-		return handlerInstance.apiCall(SheetResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_sheet");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -524,7 +586,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createPresentation(request)	{
-		const CreatePresentationParameters = require("./create_presentation_parameters").MasterModel;
+		const CreatePresentationParameters = (await (import("./create_presentation_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof CreatePresentationParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: CreatePresentationParameters", null, null);
 		}
@@ -533,11 +595,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/show/officeapi/v1/presentation");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_presentation");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -548,7 +610,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async convertPresentation(request)	{
-		const ConvertPresentationParameters = require("./convert_presentation_parameters").MasterModel;
+		const ConvertPresentationParameters = (await (import("./convert_presentation_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof ConvertPresentationParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: ConvertPresentationParameters", null, null);
 		}
@@ -557,11 +619,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/show/officeapi/v1/presentation/convert");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("convert_presentation");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -572,7 +634,7 @@ class V1Operations{
 	 * @throws {SDKException}
 	 */
 	async createPresentationPreview(request)	{
-		const PresentationPreviewParameters = require("./presentation_preview_parameters").MasterModel;
+		const PresentationPreviewParameters = (await (import("./presentation_preview_parameters.js"))).MasterModel;
 		if((request != null) && (!(request instanceof PresentationPreviewParameters)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: request EXPECTED TYPE: PresentationPreviewParameters", null, null);
 		}
@@ -581,11 +643,11 @@ class V1Operations{
 		apiPath = apiPath.concat("/show/officeapi/v1/presentation/preview");
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_POST);
-		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		handlerInstance.setContentType("multipart/form-data");
+		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_CREATE);
 		handlerInstance.setRequest(request);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("create_presentation_preview");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -606,8 +668,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_presentation_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -628,8 +691,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_presentation_session");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -650,8 +714,9 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let ShowResponseHandler = require.resolve("./show_response_handler");
-		return handlerInstance.apiCall(ShowResponseHandler, "application/json");
+		handlerInstance.setMethodName("delete_presentation");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
@@ -667,13 +732,15 @@ class V1Operations{
 		handlerInstance.setAPIPath(apiPath);
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET);
 		handlerInstance.setCategoryMethod(Constants.REQUEST_CATEGORY_READ);
-		let ResponseHandler = require.resolve("./response_handler");
-		return handlerInstance.apiCall(ResponseHandler, "application/json");
+		handlerInstance.setMethodName("get_plan_details");
+		handlerInstance.setOperationClassName("com.zoho.officeintegrator.V1.V1Operations");
+		return handlerInstance.apiCall();
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : V1Operations,
-	V1Operations : V1Operations
+export {
+	V1Operations as MasterModel,
+	V1Operations as V1Operations
 }

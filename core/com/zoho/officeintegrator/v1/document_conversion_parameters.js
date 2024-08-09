@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class DocumentConversionParameters{
 
@@ -88,8 +88,8 @@ class DocumentConversionParameters{
 	 * The method to set the value to outputOptions
 	 * @param {DocumentConversionOutputOptions} outputOptions An instance of DocumentConversionOutputOptions
 	 */
-	setOutputOptions(outputOptions)	{
-		const DocumentConversionOutputOptions = require("./document_conversion_output_options").MasterModel;
+	async setOutputOptions(outputOptions)	{
+		const DocumentConversionOutputOptions = (await (import("./document_conversion_output_options.js"))).MasterModel;
 		if((outputOptions != null) && (!(outputOptions instanceof DocumentConversionOutputOptions)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: outputOptions EXPECTED TYPE: DocumentConversionOutputOptions", null, null);
 		}
@@ -130,8 +130,9 @@ class DocumentConversionParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : DocumentConversionParameters,
-	DocumentConversionParameters : DocumentConversionParameters
+export {
+	DocumentConversionParameters as MasterModel,
+	DocumentConversionParameters as DocumentConversionParameters
 }

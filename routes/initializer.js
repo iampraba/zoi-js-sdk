@@ -1,48 +1,31 @@
-/**
-Copyright (c) 2021, ZOHO CORPORATION PRIVATE LIMITED 
-All rights reserved. 
- 
-   Licensed under the Apache License, Version 2.0 (the "License"); 
-   you may not use this file except in compliance with the License. 
-   You may obtain a copy of the License at 
- 
-       http://www.apache.org/licenses/LICENSE-2.0 
- 
-   Unless required by applicable law or agreed to in writing, software 
-   distributed under the License is distributed on an "AS IS" BASIS, 
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-   See the License for the specific language governing permissions and 
-   limitations under the License. 
-**/
-
-const UserSignature = require("./user_signature").UserSignature;
-const SDKException = require('../routes/exception/sdk_exception').SDKException;
-const Environment = require("../routes/dc/environment").Environment;
-const Token = require("../models/authenticator/token").Token;
-const Store = require("../models/authenticator/store/token_store").TokenStore;
-const Logger = require('winston');
-const Constants = require('../utils/util/constants').Constants;
-const RequestProxy = require("./request_proxy").RequestProxy;
-const path = require("path");
-const loggerFile = require('./logger/logger');
-const SDKLogger = require('./logger/sdk_logger').SDKLogger;
-const SDKConfig = require('./sdk_config').SDKConfig;
+import {SDKException} from "./exception/sdk_exception.js";
+import {Constants} from "../utils/util/constants.js";
+import {SDKLogger} from "./logger/sdk_logger.js";
+import * as path from "path";
+import {OAuth2} from "../models/authenticator/oauth2.js";
+import {Environment} from "../core/com/zoho/officeintegrator/dc/environment.js";
+import {Token} from "../models/authenticator/token.js";
+import {TokenStore} from "../models/authenticator/store/token_store.js";
+import pkg from "winston";
+let Logger1 = pkg;
+import {RequestProxy} from "./request_proxy.js";
+import {Logger} from "./logger/logger.js"
+import {SDKConfig} from "./sdk_config.js";
+import * as url from "url";
+const __dirname = url.fileURLToPath(new URL(".",import.meta.url));
+import * as fs from "fs";
 
 /**
  * The class to initialize Zoho SDK.
  */
 class Initializer {
-	static LOCAL = new Map();
-
 	static initializer;
 
 	_environment;
 
 	_store;
 
-	_user;
-
-	_token;
+	_tokens;
 
 	static jsonDetails;
 
@@ -52,16 +35,15 @@ class Initializer {
 
 	/**
 	 * The method is to initialize the SDK.
-	 * @param {UserSignature} user - A UserSignature class instance represents the Zoho user.
 	 * @param {Environment} environment - A Environment class instance containing the Zoho API base URL and Accounts URL.
-	 * @param {Token} token - A Token class instance containing the OAuth client application information.
+	 * @param {Array} tokens - A Token class instance containing the OAuth client application information.
 	 * @param {TokenStore} store - A TokenStore class instance containing the token store information.
 	 * @param {SDKConfig} sdkConfig - A SDKConfig class instance containing the configuration.
-	 * @param {loggerFile.Logger} logger - A Logger class instance containing the log file path and Logger type.
+	 * @param {Logger} logger - A Logger class instance containing the log file path and Logger type.
 	 * @param {RequestProxy} proxy - A RequestProxy class instance containing the proxy properties of the user.
 	 * @throws {SDKException}
 	 */
-	static async initialize(user, environment, token, store, sdkConfig, logger = null, proxy = null) {
+	static async initialize(environment, tokens, store, sdkConfig, logger = null, proxy = null) {
 		try {
 			SDKLogger.initialize(logger);
 
@@ -76,11 +58,9 @@ class Initializer {
 
 			let initializer = new Initializer();
 
-			initializer._user = user;
-
 			initializer._environment = environment;
 
-			initializer._token = token;
+			initializer._tokens = tokens;
 
 			initializer._store = store;
 
@@ -88,11 +68,9 @@ class Initializer {
 
 			initializer._requestProxy = proxy;
 
-			Initializer.LOCAL.set(await initializer.getEncodedKey(user, environment), initializer);
-
 			Initializer.initializer = initializer;
 
-			Logger.info(Constants.INITIALIZATION_SUCCESSFUL.concat(await Initializer.initializer.toString()));
+			Logger1.info(Constants.INITIALIZATION_SUCCESSFUL.concat(Initializer.initializer.toString()));
 
 		} catch (err) {
 			if (!(err instanceof SDKException)) {
@@ -109,7 +87,6 @@ class Initializer {
 	 * @returns A JSON representing the class information details.
 	 */
 	static getJSON(filePath) {
-		let fs = require('fs');
 
 		let fileData = fs.readFileSync(filePath);
 
@@ -121,35 +98,22 @@ class Initializer {
 	 * @returns A Initializer class instance representing the SDK configuration details.
 	 */
 	static async getInitializer() {
-		if (Array.from(Initializer.LOCAL.keys()).length > 0) {
-			let initializer = new Initializer();
-
-			let encodedKey = await initializer.getEncodedKey(Initializer.initializer._user, Initializer.initializer._environment);
-
-			if (Initializer.LOCAL.has(encodedKey)) {
-				return Initializer.LOCAL.get(encodedKey);
-			}
-		}
-
 		return Initializer.initializer;
 	}
 
 	/**
 	 * This method is to switch the different user in SDK environment.
-	 * @param {UserSignature} user - A UserSignature class instance represents the Zoho user.
 	 * @param {Environment} environment - A Environment class instance containing the Zoho API base URL and Accounts URL.
-	 * @param {Token} token - A Token class instance containing the OAuth client application information.
+	 * @param {Array} tokens - A Token class instance containing the OAuth client application information.
 	 * @param {SDKConfig} sdkConfig - A SDKConfig instance representing the configuration
 	 * @param {RequestProxy} proxy - A RequestProxy class instance containing the proxy properties.
 	 */
-	static async switchUser(user, environment, token, sdkConfig, proxy = null) {
+	static async switchUser(environment, tokens, sdkConfig, proxy = null) {
 		let initializer = new Initializer();
-
-		initializer._user = user;
 
 		initializer._environment = environment;
 
-		initializer._token = token;
+		initializer._tokens = tokens;
 
 		initializer._store = Initializer.initializer.getStore();
 
@@ -157,11 +121,9 @@ class Initializer {
 
 		initializer._requestProxy = proxy;
 
-		Initializer.LOCAL.set(await initializer.getEncodedKey(user, environment), initializer);
-
 		Initializer.initializer = initializer;
 
-		Logger.info(Constants.INITIALIZATION_SWITCHED.concat(await Initializer.initializer.toString()))
+		Logger1.info(Constants.INITIALIZATION_SWITCHED.concat(Initializer.initializer.toString()))
 	}
 
 	/**
@@ -181,14 +143,6 @@ class Initializer {
 	}
 
 	/**
-	 * This is a getter method to get Zoho User.
-	 * @returns A User class instance representing the Zoho user.
-	 */
-	getUser() {
-		return this._user;
-	}
-
-	/**
 	 * This is a getter method to get Proxy information.
 	 * @returns {RequestProxy} A RequestProxy class instance representing the API Proxy information.
 	 */
@@ -198,10 +152,10 @@ class Initializer {
 
 	/**
 	 * This is a getter method to get OAuth client application information.
-	 * @returns A Token class instance representing the OAuth client application information.
+	 * @returns An Array of  class instances representing the OAuth client application information.
 	 */
-	getToken() {
-		return this._token;
+	getTokens() {
+		return this._tokens;
 	}
 
 	/**
@@ -212,27 +166,8 @@ class Initializer {
 		return this._sdkConfig;
 	}
 
-	static async removeUserConfiguration(user, environment) {
-		let initializer = new Initializer();
-
-		let encodedKey = await initializer.getEncodedKey(user, environment);
-
-		if (Initializer.LOCAL.has(encodedKey)) {
-			Initializer.LOCAL.delete(encodedKey);
-		}
-		else {
-			throw new SDKException(Constants.USER_NOT_FOUND_ERROR, Constants.USER_NOT_FOUND_ERROR);
-		}
-	}
-
-	async getEncodedKey(user, environment) {
-		let key = (user.getEmail()).substring(0, (user.getEmail().indexOf('@'))) + environment.getUrl();
-
-		return Buffer.from(this.toUTF8Array(key)).toString('base64');
-	}
-
 	async toString() {
-		return Constants.FOR_EMAIL_ID.concat((await Initializer.initializer)._user.getEmail()).concat(Constants.IN_ENVIRONMENT).concat((await Initializer.initializer)._environment.getUrl()).concat(".");
+		return Constants.IN_ENVIRONMENT.concat((await Initializer.initializer)._environment.getUrl()).concat(".");
 	}
 
 	toUTF8Array(str) {
@@ -269,7 +204,7 @@ class Initializer {
 	}
 }
 
-module.exports = {
-	MasterModel: Initializer,
-	Initializer: Initializer
+export  {
+	Initializer as MasterModel,
+	Initializer as Initializer
 }

@@ -1,7 +1,7 @@
 class ShowResponseHandler{
 
 }
-module.exports = {
-	MasterModel : ShowResponseHandler,
-	ShowResponseHandler : ShowResponseHandler
+export {
+	ShowResponseHandler as MasterModel,
+	ShowResponseHandler as ShowResponseHandler
 }

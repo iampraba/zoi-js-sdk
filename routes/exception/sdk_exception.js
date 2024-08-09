@@ -47,7 +47,4 @@
     }
 }
 
-module.exports = {
-    MasterModel: SDKException,
-    SDKException: SDKException
-};
+export {SDKException as MasterModel, SDKException as SDKException}

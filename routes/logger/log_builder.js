@@ -1,4 +1,4 @@
-const Logger = require("./logger").Logger;
+import {Logger} from "./logger.js";
 
 class LogBuilder {
     _level;
@@ -22,7 +22,4 @@ class LogBuilder {
     }
 }
 
-module.exports = {
-    MasterModel: LogBuilder,
-    LogBuilder: LogBuilder
-};
+export {LogBuilder as MasterModel, LogBuilder as LogBuilder}

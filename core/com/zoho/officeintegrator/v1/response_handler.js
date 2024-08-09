@@ -1,7 +1,7 @@
 class ResponseHandler{
 
 }
-module.exports = {
-	MasterModel : ResponseHandler,
-	ResponseHandler : ResponseHandler
+export {
+	ResponseHandler as MasterModel,
+	ResponseHandler as ResponseHandler
 }

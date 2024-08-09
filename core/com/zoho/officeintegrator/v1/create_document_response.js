@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class CreateDocumentResponse{
 
@@ -174,8 +174,9 @@ class CreateDocumentResponse{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : CreateDocumentResponse,
-	CreateDocumentResponse : CreateDocumentResponse
+export {
+	CreateDocumentResponse as MasterModel,
+	CreateDocumentResponse as CreateDocumentResponse
 }

@@ -1,10 +1,8 @@
-let Converter = require("./converter").Converter;
-const Initializer = require("../../routes/initializer").Initializer;
-const SDKException = require("../../routes/exception/sdk_exception").SDKException;
-const DatatypeConverter = require("../util/datatype_converter").DatatypeConverter;
-const path = require('path');
-const Constants = require("./constants").Constants;
-const Utility = require("./utility").Utility;
+import {Converter} from "./converter.js";
+import {Constants} from "./constants.js";
+import {Initializer} from "../../routes/initializer.js";
+import {SDKException} from "../../routes/exception/sdk_exception.js";
+import {DataTypeConverter} from "./datatype_converter.js";
 
 /**
  * This class processes the API response to the object and an object to a JSON object, containing the request body.
@@ -20,30 +18,63 @@ class JSONConverter extends Converter {
 		return JSON.stringify(requestBase.getRequestBody()) || null;
 	}
 
-	async formRequest(requestInstance, pack, instanceNumber, memberDetail) {
+	async getWrappedRequest(requestInstance, pack)
+	{
+		var classes = pack[Constants.CLASSES];
+		for (let class1 of classes) {
+			let groupType = pack[Constants.GROUP_TYPE];
+			if (groupType == Constants.ARRAY_OF) {
+				if (pack.hasOwnProperty(Constants.INTERFACE) && pack[Constants.INTERFACE]) {
+					if (requestInstance instanceof Array) {
+						let requestObjects = requestInstance;
+						if (requestObjects.length > 0) {
+							let jsonArray = [];
+							let instanceCount = 0;
+							for (let request of requestObjects) {
+								jsonArray.push(request, request.constructor.name, instanceCount, null, groupType);
+								instanceCount++;
+							}
+							return jsonArray;
+						}
+					} else {
+						return await this.formRequest(requestInstance, class1, null, null, groupType);
+					}
+				} else {
+					return await this.formRequest(requestInstance, class1, null, null, groupType);
+				}
+			} else {
+				return await this.formRequest(requestInstance, class1, null, null, groupType);
+			}
+		}
+		return null;
+	}
+	async formRequest(requestInstance, pack, instanceNumber, memberDetail, groupType) {
 		var classDetail = Initializer.jsonDetails[pack];
 
 		if (classDetail.hasOwnProperty(Constants.INTERFACE) && classDetail[Constants.INTERFACE]) {
-			var classes = classDetail[Constants.CLASSES];
+			let groupType1 = classDetail[groupType];
+			if (groupType1 != null){
+				var classes = classDetail[Constants.CLASSES];
 
-			var baseName = pack.split('/').slice(0, -1);
+				var baseName = pack.split('/').slice(0, -1);
 
-			let className = await this.getFileName(requestInstance.constructor.name);
+				let className = this.getFileName(requestInstance.constructor.name);
 
-			baseName.push(className);
+				baseName.push(className);
 
-			let requestObjectClassName = baseName.join('/');
+				let requestObjectClassName = baseName.join('/');
 
-			for (let className1 in classes) {
-				if (classes[className1].toLowerCase() == requestObjectClassName) {
+				for (let className1 in classes) {
+					if (className1.toLowerCase() == requestObjectClassName) {
 
-					classDetail = Initializer.jsonDetails[requestObjectClassName];
+						classDetail = Initializer.jsonDetails[requestObjectClassName];
 
-					break;
+						break;
+					}
 				}
 			}
 		}
-		return await this.isNotRecordRequest(requestInstance, classDetail, instanceNumber, memberDetail);
+		return await this.isNotRecordRequest(requestInstance, classDetail, instanceNumber, memberDetail).catch(err => { throw err; });
 	}
 
 	async isNotRecordRequest(requestInstance, classDetail, instanceNumber, classMemberDetail) {
@@ -56,25 +87,35 @@ class JSONConverter extends Converter {
 		if (classMemberDetail != null) {
 			lookUp = (classMemberDetail.hasOwnProperty(Constants.LOOKUP) ? classMemberDetail[Constants.LOOKUP] : false);
 
-			skipMandatory = (classMemberDetail.hasOwnProperty(Constants.SKIP_MANDATORY) ? classMemberDetail[Constants.SKIP_MANDATORY] : false);
-
 			classMemberName = this.buildName(classMemberDetail[Constants.NAME]);
 		}
 
 		var requestJSON = {};
 
-		var primaryKeys = new Map();
-
 		var requiredKeys = new Map();
-
-		var requiredInUpdateKeys = new Map();
 
 		for (let memberName in classDetail) {
 			var modification = null;
 
 			var memberDetail = classDetail[memberName];
 
-			if ((memberDetail.hasOwnProperty(Constants.READ_ONLY) && memberDetail[Constants.READ_ONLY] == 'true') || !memberDetail.hasOwnProperty(Constants.NAME)) {// read only or no keyName
+			let found = false;
+
+			if (memberDetail.hasOwnProperty(Constants.REQUEST_SUPPORTED) || !memberDetail.hasOwnProperty(Constants.NAME))
+			{
+				let requestSupported = memberDetail[Constants.REQUEST_SUPPORTED];
+
+				for (let i=0; i<requestSupported.length; i++)
+				{
+					if (requestSupported[i] == this.commonAPIHandler.getCategoryMethod().toLowerCase())
+					{
+						found = true;
+						break;
+					}
+				}
+			}
+			if (!found)
+			{
 				continue;
 			}
 
@@ -86,17 +127,8 @@ class JSONConverter extends Converter {
 			catch (ex) {
 				throw new SDKException(Constants.EXCEPTION_IS_KEY_MODIFIED, null, null, ex);
 			}
-
-			if (memberDetail.hasOwnProperty(Constants.REQUIRED) && memberDetail[Constants.REQUIRED] == true) {
+			if (memberDetail.hasOwnProperty(Constants.REQUIRED_FOR) && (memberDetail[Constants.REQUIRED_FOR] == Constants.ALL || memberDetail[Constants.REQUIRED_FOR] == Constants.REQUEST)) {
 				requiredKeys.set(keyName, true);
-			}
-
-			if (memberDetail.hasOwnProperty(Constants.PRIMARY) && memberDetail[Constants.PRIMARY] == true && (!memberDetail.hasOwnProperty(Constants.REQUIRED_IN_UPDATE) || memberDetail[Constants.REQUIRED_IN_UPDATE] == true)) {
-				primaryKeys.set(keyName, true);
-			}
-
-			if (memberDetail.hasOwnProperty(Constants.REQUIRED_IN_UPDATE) && memberDetail[Constants.REQUIRED_IN_UPDATE] == true) {
-				requiredInUpdateKeys.set(keyName, true);
 			}
 
 			var fieldValue = null;
@@ -104,45 +136,31 @@ class JSONConverter extends Converter {
 			if (modification != null && modification != 0) {
 				fieldValue = Reflect.get(requestInstance, memberName);
 
-				if (await this.valueChecker(requestInstance.constructor.name, memberName, memberDetail, fieldValue, this.uniqueValuesMap, instanceNumber)) {
+				if (fieldValue != null) {
+					if (await this.valueChecker(requestInstance.constructor.name, memberName, memberDetail, fieldValue, this.uniqueValuesMap, instanceNumber).catch(err => { throw err; })) {
 
-					if (fieldValue != null) {
-						requiredKeys.delete(keyName);
-
-						primaryKeys.delete(keyName);
-
-						requiredInUpdateKeys.delete(keyName);
-					}
-
-					if (requestInstance instanceof FileDetails) {
-						if (fieldValue == null || fieldValue == "null") {
-							requestJSON[keyName.toLowerCase()] = null;
-						}
-						else {
-							requestJSON[keyName.toLowerCase()] = fieldValue;
+						if (requiredKeys.has(keyName)){
+							requiredKeys.delete(keyName);
 						}
 					}
-					else {
-						requestJSON[keyName] = await this.setData(memberDetail, fieldValue)
-					}
+					requestJSON[keyName] = await this.setData(memberDetail, fieldValue)
 				}
 			}
 		}
 
-		if (skipMandatory || this.checkException(classMemberName, requestInstance, instanceNumber, lookUp, requiredKeys, primaryKeys, requiredInUpdateKeys) === true) {
-			return requestJSON;
+		if (!skipMandatory)
+		{
+			this.checkException(classMemberName, requestInstance, instanceNumber, requiredKeys);
 		}
+		return requestJSON;
 	}
 
-	checkException(memberName, requestInstance, instanceNumber, lookUp, requiredKeys, primaryKeys, requiredInUpdateKeys) {
-		if (requiredInUpdateKeys.size > 0 && this.commonAPIHandler.getCategoryMethod() != null && this.commonAPIHandler.getCategoryMethod().toUpperCase() == Constants.REQUEST_CATEGORY_UPDATE) {
+	checkException(memberName, requestInstance, instanceNumber, requiredKeys) {
+		if (requiredKeys.size > 0 && this.commonAPIHandler && this.commonAPIHandler.getCategoryMethod() != null && this.commonAPIHandler.getCategoryMethod().toUpperCase() == Constants.REQUEST_CATEGORY_UPDATE) {
 			let error = {};
-
 			error.field = memberName;
-
 			error.type = requestInstance.constructor.name;
-
-			error.keys = Array.from(requiredInUpdateKeys.keys()).toString();
+			error.keys = Array.from(requiredKeys.keys()).toString();
 
 			if (instanceNumber != null) {
 				error.instance_number = instanceNumber;
@@ -150,215 +168,294 @@ class JSONConverter extends Converter {
 
 			throw new SDKException(Constants.MANDATORY_VALUE_ERROR, Constants.MANDATORY_KEY_ERROR, error, null);
 		}
-
-		if (this.commonAPIHandler.isMandatoryChecker() != null && this.commonAPIHandler.isMandatoryChecker()) {
-			if (this.commonAPIHandler.getCategoryMethod().toUpperCase() == Constants.REQUEST_CATEGORY_CREATE) {
-				if (lookUp) {
-					if (primaryKeys.size > 0) {
-						let error = {};
-
-						error.field = memberName;
-
-						error.type = requestInstance.constructor.name;
-
-						error.keys = Array.from(primaryKeys.keys()).toString();
-
-						if (instanceNumber != null) {
-							error.instance_number = instanceNumber;
-						}
-
-						throw new SDKException(Constants.MANDATORY_VALUE_ERROR, Constants.PRIMARY_KEY_ERROR, error, null);
-					}
-				}
-				else if (requiredKeys.size > 0) {
-					let error = {};
-
-					error.field = memberName;
-
-					error.type = requestInstance.constructor.name;
-
-					error.keys = Array.from(requiredKeys.keys()).toString();
-
-					if (instanceNumber != null) {
-						error.instance_number = instanceNumber;
-					}
-
-					throw new SDKException(Constants.MANDATORY_VALUE_ERROR, Constants.MANDATORY_KEY_ERROR, error, null);
-				}
-			}
-
-			if (this.commonAPIHandler.getCategoryMethod().toUpperCase() == Constants.REQUEST_CATEGORY_UPDATE && primaryKeys.size > 0) {
-				let error = {};
-
-				error.field = memberName;
-
-				error.type = requestInstance.constructor.name;
-
-				error.keys = Array.from(primaryKeys.keys()).toString();
-
-				if (instanceNumber != null) {
-					error.instance_number = instanceNumber;
-				}
-
-				throw new SDKException(Constants.MANDATORY_VALUE_ERROR, Constants.PRIMARY_KEY_ERROR, error, null);
-			}
-		}
-		else if (lookUp && this.commonAPIHandler.getCategoryMethod().toUpperCase() == Constants.REQUEST_CATEGORY_UPDATE) {
-			if (primaryKeys.size > 0) {
-				let error = {};
-
-				error.field = memberName;
-
-				error.type = requestInstance.constructor.name;
-
-				error.keys = Array.from(primaryKeys.keys()).toString();
-
-				if (instanceNumber != null) {
-					error.instance_number = instanceNumber;
-				}
-
-				throw new SDKException(Constants.MANDATORY_VALUE_ERROR, Constants.PRIMARY_KEY_ERROR, error, null);
-			}
-		}
-
-		return true;
 	}
 
 	async setData(memberDetail, fieldValue) {
 		if (fieldValue != null) {
+
 			let type = memberDetail[Constants.TYPE].toString();
 
-			if (type.toLowerCase() == Constants.LIST_NAMESPACE.toLowerCase()) {
-				return await this.setJSONArray(fieldValue, memberDetail);
-			}
-			else if (type.toLowerCase() == Constants.MAP_NAMESPACE.toLowerCase()) {
-				return await this.setJSONObject(fieldValue, memberDetail);
-			}
-			else if (type == Constants.CHOICE_NAMESPACE || (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME) && memberDetail[Constants.STRUCTURE_NAME] == Constants.CHOICE_NAMESPACE)) {
-				return fieldValue.getValue();
-			}
-			else if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
-				return await this.formRequest(fieldValue, memberDetail[Constants.STRUCTURE_NAME], null, memberDetail);
-			}
-			else {
-				return DatatypeConverter.postConvert(fieldValue, type);
-			}
+			return await this.setDataValue(type, memberDetail, fieldValue);
 		}
 
 		return null;
 	}
+	async setDataValue(type, memberDetail, fieldValue)
+	{
+		let groupType = memberDetail.hasOwnProperty(Constants.GROUP_TYPE) ? memberDetail[Constants.GROUP_TYPE] : null;
 
-	async setJSONObject(requestObject, memberDetail) {
-		var jsonObject = {};
+		if (type.toLowerCase() == Constants.LIST_NAMESPACE.toLowerCase()) {
+			return await this.setJSONArray(fieldValue, memberDetail, groupType).catch(err => { throw err; });
+		}
+		else if (type.toLowerCase() == Constants.MAP_NAMESPACE.toLowerCase()) {
+			return await this.setJSONObject(fieldValue, memberDetail).catch(err => { throw err; });
+		}
+		else if (type == Constants.CHOICE_NAMESPACE || (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME) && memberDetail[Constants.STRUCTURE_NAME] == Constants.CHOICE_NAMESPACE)) {
+			return fieldValue.getValue();
+		}
+		else if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
+			return await this.formRequest(fieldValue, memberDetail[Constants.STRUCTURE_NAME], null, memberDetail, groupType).catch(err => { throw err; });
+		}
+		else {
+			return DataTypeConverter.postConvert(fieldValue, type);
+		}
+	}
+
+	async setJSONObject(fieldValue, memberDetail) {
+		let jsonObject = {};
+
+		let requestObject = fieldValue;
 
 		if (Array.from(requestObject.keys()).length > 0) {
-			if (memberDetail == null || (memberDetail != null && !memberDetail.hasOwnProperty(Constants.KEYS))) {
-
+			if (memberDetail == null) {
 				for (let key of Array.from(requestObject.keys())) {
-					jsonObject[key] = await this.redirectorForObjectToJSON(requestObject.get(key));
+					jsonObject[key] = await this.redirectorForObjectToJSON(requestObject.get(key)).catch(err => {throw err;});
 				}
-			}
-			else {
-				if (memberDetail !== null && memberDetail.hasOwnProperty(Constants.KEYS)) {
-					var keysDetail = memberDetail[Constants.KEYS];
+			} else {
 
-					for (let keyIndex = 0; keyIndex < keysDetail.length; keyIndex++) {
-
-						let keyDetail = keysDetail[keyIndex];
-
-						let keyName = keyDetail[Constants.NAME];
-
-						let keyValue = null;
-
-						if (requestObject.has(keyName) && requestObject.get(keyName) != null) {
-
-							keyValue = await this.setData(keyDetail, requestObject.get(keyName));
-
-							jsonObject[keyName] = keyValue;
-						}
+				if (memberDetail.hasOwnProperty(Constants.EXTRA_DETAILS)) {
+					let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+					if (extraDetails != null && extraDetails.length > 0) {
+						let members = await this.getValidStructure(extraDetails, requestObject.keys()).catch(err => {throw err;});
+						return this.isNotRecordRequest(fieldValue, members, null, null).catch(err => {throw err;});
+					}
+				} else {
+					for (let key in requestObject.keys()) {
+						jsonObject[key.toString()] = this.redirectorForObjectToJSON(requestObject.get(key)).catch(err => {throw err;});
 					}
 				}
 			}
 		}
-
 		return jsonObject;
 	}
 
-	async setJSONArray(requestObjects, memberDetail) {
+	async areArraysEqual(arr1, arr2){
+		if (arr1.length !== arr2.length) {
+			return false;
+		}
+		const sortedArr1 = arr1.slice().sort();
+		const sortedArr2 = arr2.slice().sort();
+		for (let i = 0; i < sortedArr1.length; i++) {
+			if (sortedArr1[i] !== sortedArr2[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	async getValidStructure(extraDetails, keys)
+	{
+		for (let key in extraDetails)
+		{
+			let extraDetail = extraDetails[key];
+
+			if (!extraDetail.hasOwnProperty(Constants.MEMBERS))
+			{
+				let members = Initializer.jsonDetails[extraDetail[Constants.TYPE]];
+				if (await this.areArraysEqual(keys, members.keys))
+				{
+					return members;
+				}
+			}
+			else
+			{
+				if (extraDetail.hasOwnProperty(Constants.MEMBERS))
+				{
+					let members = extraDetail[Constants.MEMBERS];
+					if (await this.areArraysEqual(keys, members.keys))
+					{
+						return members;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	async setJSONArray(requestObjects, memberDetail, groupType) {
 		var jsonArray = [];
 
 		if (requestObjects.length > 0) {
 			if (memberDetail == null || (memberDetail != null && !memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME))) {
-				for (let request of requestObjects) {
-					jsonArray.push(await this.redirectorForObjectToJSON(request));
+
+				if (memberDetail != null && memberDetail.hasOwnProperty(Constants.SUB_TYPE))
+				{
+					let subType = memberDetail[Constants.SUB_TYPE];
+					let type = subType[Constants.TYPE];
+					if (type == Constants.CHOICE_NAMESPACE)
+					{
+						for (let response of requestObjects)
+						{
+							jsonArray.push(response.getValue());
+						}
+					}
+					else
+					{
+						for (let response of requestObjects)
+						{
+							jsonArray.push(await this.setDataValue(type, memberDetail, response).catch(err=> { throw err;}));
+						}
+					}
+				}
+				else
+				{
+					for (let request of requestObjects) {
+						jsonArray.push(await this.redirectorForObjectToJSON(request).catch(err => { throw err; }));
+					}
 				}
 			}
 			else {
-				let pack = memberDetail[Constants.STRUCTURE_NAME].toString();
-
-				if (pack == Constants.CHOICE_NAMESPACE) {
-					for (let request of requestObjects) {
-						jsonArray.push(request.getValue());
+				if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME))
+				{
+					let pack = memberDetail[Constants.STRUCTURE_NAME];
+					if (pack.toLowerCase() == Constants.CHOICE_NAMESPACE)
+					{
+						for (let request of requestObjects)
+						{
+							jsonArray.push(request.getValue());
+						}
+					}
+					else
+					{
+						let instanceCount = 0;
+						for (let request of requestObjects)
+						{
+							jsonArray.push(await this.formRequest(request, pack, instanceCount, memberDetail, groupType));
+							instanceCount++;
+						}
 					}
 				}
-				else {
+				else
+				{
 					let instanceCount = 0;
-
-					for (let request of requestObjects) {
-						jsonArray.push(await this.formRequest(request, pack, instanceCount++, memberDetail));
+					for (let request of requestObjects)
+					{
+						if(request instanceof Map)
+						{
+							let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+							if (extraDetails != null && extraDetails.length > 0)
+							{
+								let members = await this.getValidStructure(extraDetails, request.keys());
+								jsonArray.push(await this.isNotRecordRequest(request, members, null, null).catch(err => {throw err;}));
+							}
+							else
+							{
+								jsonArray.push(await this.redirectorForObjectToJSON(request).catch(err => {throw err;}));
+							}
+						}
+						else
+						{
+							jsonArray.push(await this.formRequest(request, request.constructor.name, instanceCount, memberDetail, groupType).catch(err => {throw err;}));
+						}
+						instanceCount++;
 					}
 				}
 			}
 		}
-
 		return jsonArray;
 	}
 
 	async redirectorForObjectToJSON(request) {
 		if (Array.isArray(request)) {
-			return await this.setJSONArray(request, null);
+			return await this.setJSONArray(request, null, null).catch(err => { throw err; });
 		}
 		else if (request instanceof Map) {
-			return await this.setJSONObject(request, null);
+			return await this.setJSONObject(request, null).catch(err => { throw err; });
+		}
+		else if (request instanceof Choice)
+		{
+			return request.getValue();
 		}
 		else {
 			return request;
 		}
 	}
 
-	async getWrappedResponse(response, pack) {
-		if (response.body.length != 0) {
-			var responseJson = JSON.parse(response.body);
-
-			return await this.getResponse(responseJson, pack);
+	async getWrappedResponse(response, contents) {
+		let responseObject = JSON.parse(response.body);
+		if (responseObject != null)
+		{
+			let pack;
+			if (contents.length === 1)
+			{
+				pack = contents[0];
+			}
+			else
+			{
+				pack = await this.findMatchResponseClass(contents, responseObject);
+			}
+			if (pack != null)
+			{
+				let groupType = pack[Constants.GROUP_TYPE];
+				if (groupType == Constants.ARRAY_OF)
+				{
+					if (pack.hasOwnProperty(Constants.INTERFACE) && pack[Constants.INTERFACE])
+					{
+						let interfaceName = pack[Constants.CLASSES][0];
+						let classDetail = Initializer.jsonDetails[interfaceName];
+						let groupType1 = classDetail[Constants.ARRAY_OF];
+						if (groupType1 != null)
+						{
+							return await this.getArrayOfResponse(responseObject, groupType1[Constants.CLASSES], groupType);
+						}
+					}
+					else
+					{
+						return await this.getArrayOfResponse(responseObject, pack[Constants.CLASSES], groupType);
+					}
+				}
+				else
+				{
+					let responseJSON = responseObject;
+					if (pack.hasOwnProperty(Constants.INTERFACE) && pack[Constants.INTERFACE])
+					{
+						let interfaceName = pack[Constants.CLASSES][0];
+						return [await this.getResponse(responseObject, interfaceName, groupType), responseJSON];
+					}
+					else
+					{
+						let packName = await this.findMatchClass(pack[Constants.CLASSES], responseJSON);
+						return [await this.getResponse(responseObject, packName, groupType), responseJSON];
+					}
+				}
+			}
 		}
-
 		return null;
 	}
 
-	async getResponse(responseJson, packageName) {
+	async getResponse(response, packageName, groupType) {
+
+		let classDetail = Initializer.jsonDetails[packageName];
+
+		let responseJSON = response;
+
+		// let responseJSON = await this.getJSONResponse(response);
 
 		var instance = null;
 
-		if (responseJson == null || responseJson == "" || responseJson.length == 0) {
-			return instance;
+		if (responseJSON != null)
+		{
+			if (classDetail.hasOwnProperty(Constants.INTERFACE) && classDetail[Constants.INTERFACE])
+			{
+				let classDetail1 = Initializer.jsonDetails[packageName];
+
+				let groupType1 = classDetail1[groupType];
+
+				if (groupType1 != null)
+				{
+					let classes  = groupType1[Constants.CLASSES];
+					instance = await this.findMatch(classes, responseJSON, groupType).catch(err => {throw err;}); // find match returns instance(calls getResponse() recursively)
+				}
+			}
+			else
+			{
+				let ClassName = (await import("../../".concat(packageName).concat(".js"))).MasterModel;
+
+				instance = new ClassName();
+
+				await this.notRecordResponse(instance, responseJSON, classDetail).catch(err => {throw err;});
+			}
 		}
-
-		var classDetail = Initializer.jsonDetails[packageName];
-
-		if (classDetail.hasOwnProperty(Constants.INTERFACE) && classDetail[Constants.INTERFACE]) {
-			let classes = classDetail[Constants.CLASSES];
-
-			instance = await this.findMatch(classes, responseJson);// findmatch returns instance(calls getresponse() recursively)
-		}
-		else {
-			let ClassName = require("../../" + packageName).MasterModel;
-
-			instance = new ClassName();
-			
-			instance = await this.notRecordResponse(instance, responseJson, classDetail);// based on json details data will be assigned
-		}
-
 		return instance;
 	}
 
@@ -372,7 +469,7 @@ class JSONConverter extends Converter {
 
 				let keyData = responseJSON[keyName];
 
-				let memberValue = await this.getData(keyData, keyDetail);
+				let memberValue = await this.getData(keyData, keyDetail).catch(err => { throw err; });
 
 				Reflect.set(instance, memberName, memberValue);
 			}
@@ -384,92 +481,240 @@ class JSONConverter extends Converter {
 		let memberValue = null;
 
 		if (keyData != null) {
+
 			let type = memberDetail[Constants.TYPE].toString();
 
-			if (type.toLowerCase() == Constants.LIST_NAMESPACE.toLowerCase()) {
-				memberValue = await this.getCollectionsData(keyData, memberDetail);
-			}
-			else if (type.toLowerCase() == Constants.MAP_NAMESPACE.toLowerCase()) {
-				memberValue = await this.getMapData(keyData, memberDetail);
-			}
-			else if (type == Constants.CHOICE_NAMESPACE || (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME) && memberDetail[Constants.STRUCTURE_NAME] == Constants.CHOICE_NAMESPACE)) {
-				let Choice = require(Constants.CHOICE_PATH).MasterModel;
+			memberValue = await this.getDataValue(type, keyData, memberDetail);
 
-				memberValue = new Choice(keyData);
-			}
-			else if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
-				memberValue = await this.getResponse(keyData, memberDetail[Constants.STRUCTURE_NAME]);
-			}
-			else {
-				memberValue = await DatatypeConverter.preConvert(keyData, type);
-			}
 		}
 
 		return memberValue;
+	}
+
+	async getDataValue(type, keyData, memberDetail)
+	{
+		let memberValue = null;
+
+		let groupType = memberDetail.hasOwnProperty(Constants.GROUP_TYPE) ? memberDetail[Constants.GROUP_TYPE] : null;
+
+		if (type.toLowerCase() == Constants.LIST_NAMESPACE.toLowerCase()) {
+			memberValue = await this.getCollectionsData(keyData, memberDetail, groupType).catch(err => { throw err; });
+		}
+		else if (type.toLowerCase() == Constants.MAP_NAMESPACE.toLowerCase()) {
+			memberValue = await this.getMapData(keyData, memberDetail).catch(err => { throw err; });
+		}
+		else if (type == Constants.CHOICE_NAMESPACE || (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME) && memberDetail[Constants.STRUCTURE_NAME] == Constants.CHOICE_NAMESPACE)) {
+			let Choice = (await import(Constants.CHOICE_PATH+".js")).MasterModel;
+
+			memberValue = new Choice(keyData);
+		}
+		else if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
+			memberValue = await this.getResponse(keyData, memberDetail[Constants.STRUCTURE_NAME], groupType).catch(err => { throw err; });
+		}
+		else {
+			memberValue = await DataTypeConverter.preConvert(keyData, type);
+		}
+
+		return memberValue
 	}
 
 	async getMapData(response, memberDetail) {
 		var mapInstance = new Map();
 
 		if (Object.keys(response).length > 0) {
-			if (memberDetail == null || (memberDetail != null && !memberDetail.hasOwnProperty(Constants.KEYS))) {
+			if (memberDetail == null) {
 				for (let key in response) {
-					mapInstance.set(key, await this.redirectorForJSONToObject(response[key]));
+					mapInstance.set(key, await this.redirectorForJSONToObject(response[key]).catch(err => {
+						throw err;
+					}));
 				}
-			}
-			else {// member must have keys
-				if (memberDetail.hasOwnProperty(Constants.KEYS)) {
-					var keysDetail = memberDetail[Constants.KEYS];
-
-					for (let keyIndex = 0; keyIndex < keysDetail.length; keyIndex++) {
-						var keyDetail = keysDetail[keyIndex];
-
-						var keyName = keyDetail[Constants.NAME];
-
-						var keyValue = null;
-
-						if (response.hasOwnProperty(keyName) && response[keyName] != null) {
-							keyValue = await this.getData(response[keyName], keyDetail);
-
-							mapInstance.set(keyName, keyValue);
+			} else {
+				let responseKeys = response.keys;
+				if (memberDetail.hasOwnProperty(Constants.EXTRA_DETAILS)) {
+					let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+					let extraDetail = await this.findMatchExtraDetail(extraDetails, response);
+					if (extraDetail.hasOwnProperty(Constants.MEMBERS)) {
+						let memberDetails = extraDetail[Constants.MEMBERS];
+						for (let key in responseKeys) {
+							if (memberDetails.hasOwnProperty(key)) {
+								let memberDetail1 = memberDetails[key];
+								mapInstance.set(memberDetail1[Constants.NAME], await this.getData(response[key], memberDetail1));
+							}
 						}
 					}
 				}
 			}
 		}
-
 		return mapInstance;
 	}
 
-	async getCollectionsData(responses, memberDetail) {
-		var values = new Array();
+	async getCollectionsData(responses, memberDetail, groupType) {
+		var values = [];
 
 		if (responses.length > 0) {
-			if (memberDetail == null || (memberDetail != null && !memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME))) {
+			if (memberDetail == null)
+			{
 				for (let response of responses) {
-					values.push(await this.redirectorForJSONToObject(response));
+					values.push(await this.redirectorForJSONToObject(response).catch(err => {
+						throw err;
+					}));
 				}
 			}
-			else {// need to have structure Name in memberDetail
-				var pack = memberDetail[Constants.STRUCTURE_NAME];
-
-				if (pack == Constants.CHOICE_NAMESPACE) {
-					for (let response of responses) {
-						let choiceClass = require(Constants.CHOICE_PATH).MasterModel;
-
-						let choiceInstance = new choiceClass(response);
-
-						values.push(choiceInstance);
+			else
+			{
+				let specType = memberDetail[Constants.SPEC_TYPE];
+				if (groupType != null) {
+					if (specType == Constants.TARRAY_TYPE)
+					{
+						return await this.getTArrayResponse(memberDetail, groupType, responses).catch(err => {throw err;});
 					}
-				}
-				else {
-					for (let response of responses) {
-						values.push(await this.getResponse(response, pack));
+					else
+					{
+						let orderedStructures = null;
+						if (memberDetail.hasOwnProperty(Constants.ORDERED_STRUCTURES)) {
+							orderedStructures = memberDetail[Constants.ORDERED_STRUCTURES];
+							if (orderedStructures.length() > responses.length()) {
+								return values;
+							}
+							for (let index in orderedStructures)
+							{
+								let orderedStructure = orderedStructures[index];
+								if (!orderedStructure.hasOwnProperty(Constants.MEMBERS)) {
+									values.push(await this.getResponse(responses[parseInt(index)], orderedStructure[Constants.STRUCTURE_NAME], groupType));
+								} else {
+									if (orderedStructure.hasOwnProperty(Constants.MEMBERS)) {
+										values.push(await this.getMapData(responses[parseInt(index)], orderedStructure[Constants.MEMBERS]));
+									}
+								}
+							}
+						}
+						if (groupType == Constants.ARRAY_OF && memberDetail.hasOwnProperty(Constants.INTERFACE) && memberDetail[Constants.INTERFACE]) {
+							let interfaceName = memberDetail[Constants.STRUCTURE_NAME];
+							let classDetail = await Initializer.jsonDetails[interfaceName];
+							let groupType1 = classDetail[Constants.ARRAY_OF];
+							if (groupType1 != null) {
+								let classes = groupType1[Constants.CLASSES];
+								if (orderedStructures != null) {
+									classes = await this.validateInterfaceClass(orderedStructures, groupType1[Constants.CLASSES]);
+								}
+								values.push((await this.getArrayOfResponse(responses, classes, groupType))[0]);
+							}
+						} else if (groupType == Constants.ARRAY_OF && memberDetail.hasOwnProperty(Constants.EXTRA_DETAILS)) {
+							let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+							if (orderedStructures != null) {
+								extraDetails = await this.validateStructure(orderedStructures, extraDetails);
+							}
+							let i = 0;
+							for (let responseObject of responses)
+							{
+								if (i == extraDetails.length()) {
+									i = 0;
+								}
+								let extraDetail = extraDetails[i];
+								if (!extraDetails[i].hasOwnProperty(Constants.MEMBERS)) {
+									values.push(await this.getResponse(responseObject, extraDetail[Constants.STRUCTURE_NAME], groupType).catch(err => {throw err;}));
+								} else {
+									if (extraDetail.hasOwnProperty(Constants.MEMBERS)) {
+										values.push(await this.getMapData(responseObject, extraDetail[Constants.MEMBERS]).catch(err => {throw err;}));
+									}
+								}
+								i++;
+							}
+						} else {
+							if (memberDetail.hasOwnProperty(Constants.INTERFACE) && memberDetail[Constants.INTERFACE]) {
+								if (orderedStructures != null) {
+									let interfaceName = memberDetail[Constants.STRUCTURE_NAME];
+									let classDetail = await Initializer.jsonDetails[interfaceName];
+									let groupType1 = classDetail[Constants.ARRAY_OF];
+									if (groupType1 != null) {
+										let classes = await this.validateInterfaceClass(orderedStructures, groupType1[Constants.CLASSES]).catch(err => {throw err;});
+										for (let response of responses)
+										{
+											let packName = await this.findMatchClass(classes, response).catch(err => {throw err;});
+											values.push(await this.getResponse(response, packName, groupType).catch(err => {throw err;}));
+										}
+									}
+								}
+								else
+								{
+									for (let response of responses)
+									{
+										values.push(await this.getResponse(response, memberDetail[Constants.STRUCTURE_NAME], groupType).catch(err => {throw err;}));
+									}
+								}
+							}
+							else
+							{
+								if (memberDetail.hasOwnProperty(Constants.EXTRA_DETAILS)) {
+									let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+									if (orderedStructures != null) {
+										extraDetails = await this.validateStructure(orderedStructures, extraDetails).catch(err => {throw err;});
+									}
+									for (let responseObject of responses)
+									{
+										let extraDetail = await this.findMatchExtraDetail(extraDetails, responseObject).catch(err => {throw err;});
+										if (!extraDetail.hasOwnProperty(Constants.MEMBERS))
+										{
+											values.push(await this.getResponse(responseObject, extraDetail[Constants.STRUCTURE_NAME], groupType).catch(err => {throw err;}));
+										}
+										else
+										{
+											if (extraDetail.hasOwnProperty(Constants.MEMBERS)) {
+												values.push(await this.getMapData(responseObject, extraDetail[Constants.MEMBERS]).catch(err => {throw err;}));
+											}
+										}
+									}
+								}
+								else
+								{
+									let pack = null;
+									if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
+										pack = memberDetail[Constants.STRUCTURE_NAME];
+									}
+									else if (memberDetail.hasOwnProperty(Constants.SUB_TYPE)) {
+										pack = memberDetail[Constants.SUB_TYPE][Constants.TYPE];
+									}
+
+									if (pack != null) {
+										for (let response of responses)
+										{
+											values.push(await this.getResponse(response, pack, groupType).catch(err => {throw err;}));
+										}
+									}
+
+								}
+							}
+						}
+					}
+				} else// need to have structure Name in memberDetail
+				{
+					let pack = null;
+					if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME)) {
+						pack = memberDetail[Constants.STRUCTURE_NAME];
+					}
+					else if (memberDetail.hasOwnProperty(Constants.SUB_TYPE)) {
+						pack = memberDetail[Constants.SUB_TYPE][Constants.TYPE];
+					}
+					if (pack != null && pack.toLowerCase() == Constants.CHOICE_NAMESPACE) {
+						for (let response in responses)
+						{
+							let Choice = (await import(Constants.CHOICE_PATH + ".js")).MasterModel // No I18N
+
+							let memberValue = new Choice(response);
+
+							values.push(memberValue);
+						}
+					}
+					else
+					{
+						for (let response in responses)
+						{
+							values.push(await this.getResponse(response, pack, null).catch(err => {throw err;}));
+						}
 					}
 				}
 			}
 		}
-
 		return values;
 	}
 
@@ -477,17 +722,22 @@ class JSONConverter extends Converter {
 		let type = Object.prototype.toString.call(keyData);
 
 		if (type == Constants.OBJECT_TYPE) {
-			return await this.getMapData(keyData, null);
+			return await this.getMapData(keyData, null).catch(err => { throw err; });
 		}
 		else if (type == Constants.ARRAY_TYPE) {
-			return await this.getCollectionsData(keyData, null);
+			return await this.getCollectionsData(keyData, null, null).catch(err => { throw err; });
 		}
 		else {
 			return keyData;
 		}
 	}
 
-	async findMatch(classes, responseJson) {
+	async findMatch(classes, responseJson, groupType) {
+
+		if (classes.length == 1)
+		{
+			return await this.getResponse(responseJson, classes[0], groupType).catch(err => {throw err;});
+		}
 		let pack = "";
 
 		let ratio = 0;
@@ -500,8 +750,6 @@ class JSONConverter extends Converter {
 
 				pack = className;
 
-				ratio = 1;
-
 				break;
 			}
 			else if (matchRatio > ratio) {
@@ -512,75 +760,82 @@ class JSONConverter extends Converter {
 			}
 		}
 
-		return this.getResponse(responseJson, pack);
+		return await this.getResponse(responseJson, pack, groupType);
 	}
 
-	findRatio(className, responseJson) {
-		var classDetail = Initializer.jsonDetails[className];
-
-		var totalPoints = Array.from(Object.keys(classDetail)).length;
-
-		var matches = 0;
-
-		if (totalPoints == 0) {
-			return 0;
+	async getTArrayResponse(memberDetail, groupType, responses)
+	{
+		let values = [];
+		if (memberDetail.hasOwnProperty(Constants.INTERFACE) && memberDetail[Constants.INTERFACE] && memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME))
+		{
+			let classDetail1 = Initializer.jsonDetails[memberDetail[Constants.STRUCTURE_NAME]];
+			let groupType1 = classDetail1[groupType];
+			if (groupType1 != null)
+			{
+				let className = await this.findMatchClass(groupType1[Constants.CLASSES], responses[0]);
+				for (let response of responses)
+				{
+					values.push(await this.getResponse(response, className, null));
+				}
+			}
 		}
-		else {
-			for (let memberName in classDetail) {
-				var memberDetail = classDetail[memberName];
-
-				var keyName = memberDetail.hasOwnProperty(Constants.NAME) ? memberDetail[Constants.NAME] : null;
-
-				if (keyName != null && responseJson.hasOwnProperty(keyName) && responseJson[keyName] != null) {// key not empty
-					var keyData = responseJson[keyName];
-
-					let type = Object.prototype.toString.call(keyData);
-
-					let structureName = memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME) ? memberDetail[Constants.STRUCTURE_NAME] : null;
-
-					if (type == Constants.OBJECT_TYPE) {
-						type = Constants.MAP_TYPE;
-					}
-
-					if (Constants.TYPE_VS_DATATYPE.has(memberDetail[Constants.TYPE].toLowerCase()) && Constants.TYPE_VS_DATATYPE.get(memberDetail[Constants.TYPE].toLowerCase()) == type) {
-						matches++;
-					}
-					else if (keyName.toLowerCase() == Constants.COUNT && memberDetail[Constants.TYPE].toLowerCase() == Constants.LONG_NAMESPACE.toLowerCase() && type == Constants.NUMBER_TYPE) {
-						matches++;
-					}
-					else if (memberDetail[Constants.TYPE] == Constants.CHOICE_NAMESPACE) {
-						let values = memberDetail[Constants.VALUES];
-
-						for (let value in values) {
-							if (keyData == values[value]) {
-								matches++;
-
-								break;
+		else
+		{
+			if (memberDetail.hasOwnProperty(Constants.STRUCTURE_NAME))
+			{
+				for (let response of responses)
+				{
+					values.push(await this.getResponse(response, memberDetail[Constants.STRUCTURE_NAME], null))
+				}
+			}
+			else
+			{
+				if (memberDetail.hasOwnProperty(Constants.EXTRA_DETAILS))
+				{
+					let extraDetails = memberDetail[Constants.EXTRA_DETAILS];
+					if (extraDetails != null && extraDetails.length > 0)
+					{
+						for (let response of responses)
+						{
+							let extraDetail = await this.findMatchExtraDetail(extraDetails, response);
+							if (!extraDetail.hasOwnProperty(Constants.MEMBERS))
+							{
+								values.push(await this.getResponse(response, extraDetail[Constants.STRUCTURE_NAME], null));
 							}
-						}
-					}
-
-					if (structureName != null && structureName == memberDetail[Constants.TYPE]) {
-						if (memberDetail.hasOwnProperty(Constants.VALUES)) {
-							let values = memberDetail[Constants.VALUES];
-
-							for (let value in values) {
-								if (keyData == values[value]) {
-									matches++;
-
-									break;
+							else
+							{
+								if (extraDetail.hasOwnProperty(Constants.MEMBERS))
+								{
+									values.push(await this.getMapData(response, extraDetail[Constants.MEMBERS]));
 								}
 							}
-						}
-						else {
-							matches++;
 						}
 					}
 				}
 			}
 		}
+		return values;
+	}
 
-		return matches / totalPoints;
+	async getArrayOfResponse(responseObject, classes, groupType)
+	{
+		let responseArray = await this.getJSONArrayResponse(responseObject);
+		if (responseArray == null)
+		{
+			return null;
+		}
+		let i = 0;
+		let responseClass = [];
+		for (let responseArray1 of responseArray)
+		{
+			if (i == classes.length)
+			{
+				i = 0;
+			}
+			responseClass.push(await this.getResponse(responseArray1, classes[i], groupType));
+			i++;
+		}
+		return [responseClass, responseArray];
 	}
 
 	buildName(memberName) {
@@ -628,7 +883,7 @@ class JSONConverter extends Converter {
 	}
 }
 
-module.exports = {
-	MasterModel: JSONConverter,
-	JSONConverter: JSONConverter
+export {
+	JSONConverter as MasterModel,
+	JSONConverter as JSONConverter
 }

@@ -1,5 +1,5 @@
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class SessionInfo{
 
@@ -197,8 +197,9 @@ class SessionInfo{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : SessionInfo,
-	SessionInfo : SessionInfo
+export {
+	SessionInfo as MasterModel,
+	SessionInfo as SessionInfo
 }

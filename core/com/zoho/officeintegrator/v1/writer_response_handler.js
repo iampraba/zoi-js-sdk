@@ -1,7 +1,7 @@
 class WriterResponseHandler{
 
 }
-module.exports = {
-	MasterModel : WriterResponseHandler,
-	WriterResponseHandler : WriterResponseHandler
+export {
+	WriterResponseHandler as MasterModel,
+	WriterResponseHandler as WriterResponseHandler
 }

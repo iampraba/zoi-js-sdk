@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class PresentationPreviewParameters{
 
@@ -88,8 +88,8 @@ class PresentationPreviewParameters{
 	 * The method to set the value to documentInfo
 	 * @param {DocumentInfo} documentInfo An instance of DocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const DocumentInfo = require("./document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const DocumentInfo = (await (import("./document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof DocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: DocumentInfo", null, null);
 		}
@@ -130,8 +130,9 @@ class PresentationPreviewParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : PresentationPreviewParameters,
-	PresentationPreviewParameters : PresentationPreviewParameters
+export {
+	PresentationPreviewParameters as MasterModel,
+	PresentationPreviewParameters as PresentationPreviewParameters
 }

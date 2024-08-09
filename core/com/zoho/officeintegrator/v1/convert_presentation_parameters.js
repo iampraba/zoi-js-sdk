@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class ConvertPresentationParameters{
 
@@ -106,8 +106,9 @@ class ConvertPresentationParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : ConvertPresentationParameters,
-	ConvertPresentationParameters : ConvertPresentationParameters
+export {
+	ConvertPresentationParameters as MasterModel,
+	ConvertPresentationParameters as ConvertPresentationParameters
 }

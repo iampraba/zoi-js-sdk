@@ -1,24 +1,11 @@
-const SDKException = require("../../routes/exception/sdk_exception").SDKException;
+import {SDKException} from "../../routes/exception/sdk_exception.js";
 
 /**
  * This class handles module field details.
  */
 class Utility {
-    static apiTypeVsDataType = new Map();
 
-    static apiTypeVsStructureName = new Map();
-
-    static newFile = false;
-
-    static getModifiedModules = false;
-
-    static forceRefresh = false;
-
-    static moduleAPIName;
-
-    static apiSupportedModule = {};
-
-    static async assertNotNull(value, errorCode, errorMessage) {
+    static assertNotNull(value, errorCode, errorMessage) {
         if (value == null) {
             throw new SDKException(errorCode, errorMessage);
         }
@@ -37,11 +24,11 @@ class Utility {
     }
 
     static checkInteger(value) {
-        return (parseInt(value) === value) ? true : false;
+        return (parseInt(value) === value);
     }
 }
 
-module.exports = {
-    MasterModel: Utility,
-    Utility: Utility
-};
+export {
+    Utility as MasterModel,
+    Utility as Utility
+}

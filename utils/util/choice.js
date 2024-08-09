@@ -13,7 +13,7 @@ class Choice {
     }
 }
 
-module.exports = {
-    MasterModel: Choice,
-    Choice: Choice
+export {
+    Choice as MasterModel,
+    Choice as Choice
 }

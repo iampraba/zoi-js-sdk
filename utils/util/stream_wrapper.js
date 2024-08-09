@@ -1,7 +1,7 @@
-const path = require("path");
-const fs = require("fs");
-const SDKException = require("../../routes/exception/sdk_exception").SDKException;
-const Constants = require("./constants").Constants;
+import {SDKException} from "../../routes/exception/sdk_exception.js";
+import {Constants} from "./constants.js";
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * This class handles the file stream and name.
@@ -56,7 +56,7 @@ class StreamWrapper {
     }
 }
 
-module.exports = {
-    MasterModel: StreamWrapper,
-    StreamWrapper: StreamWrapper
+export {
+    StreamWrapper as MasterModel,
+    StreamWrapper as StreamWrapper
 }

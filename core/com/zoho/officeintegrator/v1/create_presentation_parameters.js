@@ -1,6 +1,6 @@
-const StreamWrapper = require("../../../../../utils/util/stream_wrapper").MasterModel;
-const Constants = require("../../../../../utils/util/constants").MasterModel;
-const SDKException = require("../../../../../routes/exception/sdk_exception").MasterModel;
+import {StreamWrapper} from "../../../../../utils/util/stream_wrapper.js";
+import {SDKException} from "../../../../../routes/exception/sdk_exception.js";
+import {Constants} from "../../../../../utils/util/constants.js";
 
 class CreatePresentationParameters{
 
@@ -69,8 +69,8 @@ class CreatePresentationParameters{
 	 * The method to set the value to callbackSettings
 	 * @param {CallbackSettings} callbackSettings An instance of CallbackSettings
 	 */
-	setCallbackSettings(callbackSettings)	{
-		const CallbackSettings = require("./callback_settings").MasterModel;
+	async setCallbackSettings(callbackSettings)	{
+		const CallbackSettings = (await (import("./callback_settings.js"))).MasterModel;
 		if((callbackSettings != null) && (!(callbackSettings instanceof CallbackSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: callbackSettings EXPECTED TYPE: CallbackSettings", null, null);
 		}
@@ -92,8 +92,8 @@ class CreatePresentationParameters{
 	 * The method to set the value to editorSettings
 	 * @param {ZohoShowEditorSettings} editorSettings An instance of ZohoShowEditorSettings
 	 */
-	setEditorSettings(editorSettings)	{
-		const ZohoShowEditorSettings = require("./zoho_show_editor_settings").MasterModel;
+	async setEditorSettings(editorSettings)	{
+		const ZohoShowEditorSettings = (await (import("./zoho_show_editor_settings.js"))).MasterModel;
 		if((editorSettings != null) && (!(editorSettings instanceof ZohoShowEditorSettings)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: editorSettings EXPECTED TYPE: ZohoShowEditorSettings", null, null);
 		}
@@ -137,8 +137,8 @@ class CreatePresentationParameters{
 	 * The method to set the value to documentInfo
 	 * @param {DocumentInfo} documentInfo An instance of DocumentInfo
 	 */
-	setDocumentInfo(documentInfo)	{
-		const DocumentInfo = require("./document_info").MasterModel;
+	async setDocumentInfo(documentInfo)	{
+		const DocumentInfo = (await (import("./document_info.js"))).MasterModel;
 		if((documentInfo != null) && (!(documentInfo instanceof DocumentInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: documentInfo EXPECTED TYPE: DocumentInfo", null, null);
 		}
@@ -160,8 +160,8 @@ class CreatePresentationParameters{
 	 * The method to set the value to userInfo
 	 * @param {UserInfo} userInfo An instance of UserInfo
 	 */
-	setUserInfo(userInfo)	{
-		const UserInfo = require("./user_info").MasterModel;
+	async setUserInfo(userInfo)	{
+		const UserInfo = (await (import("./user_info.js"))).MasterModel;
 		if((userInfo != null) && (!(userInfo instanceof UserInfo)))	{
 			throw new SDKException(Constants.DATA_TYPE_ERROR, "KEY: userInfo EXPECTED TYPE: UserInfo", null, null);
 		}
@@ -202,8 +202,9 @@ class CreatePresentationParameters{
 
 	}
 
+
 }
-module.exports = {
-	MasterModel : CreatePresentationParameters,
-	CreatePresentationParameters : CreatePresentationParameters
+export {
+	CreatePresentationParameters as MasterModel,
+	CreatePresentationParameters as CreatePresentationParameters
 }

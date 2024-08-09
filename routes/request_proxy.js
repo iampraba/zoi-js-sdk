@@ -58,7 +58,7 @@ class RequestProxy {
     }
 }
 
-module.exports = {
-    MasterModel: RequestProxy,
-    RequestProxy: RequestProxy
+export {
+    RequestProxy as MasterModel,
+    RequestProxy as RequestProxy
 }
